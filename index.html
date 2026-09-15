@@ -767,5 +767,27 @@ window.addEventListener("resize", function(){
 });
 })();
 </script>
+<!-- 🐧 小企鹅入口（由桌宠项目添加） -->
+<style>
+  .pet-entry{
+    position:fixed;right:20px;bottom:20px;z-index:99;width:58px;height:58px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;font-size:27px;line-height:1;
+    text-decoration:none;background:linear-gradient(135deg,#d6ecff,#a5d4f7);
+    border:2px solid rgba(255,255,255,.92);
+    box-shadow:0 8px 22px rgba(80,140,190,.35);
+    animation:pet-bob 2.6s ease-in-out infinite;
+    transition:transform .2s ease,box-shadow .2s ease;
+  }
+  .pet-entry:hover{transform:scale(1.1);box-shadow:0 12px 28px rgba(80,140,190,.5)}
+  .pet-entry::after{
+    content:"我的小企鹅";position:absolute;right:66px;white-space:nowrap;
+    font-size:12px;color:#3d5a6b;background:rgba(255,255,255,.94);
+    padding:4px 10px;border-radius:10px;box-shadow:0 4px 12px rgba(90,120,140,.2);
+    opacity:0;transition:opacity .2s ease;pointer-events:none;
+  }
+  .pet-entry:hover::after{opacity:1}
+  @keyframes pet-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+</style>
+<a href="/pet/" class="pet-entry" title="我的小企鹅 · 点我看看">🐧</a>
 </body>
 </html>
