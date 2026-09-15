@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>企鹅桌宠 🐧</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%90%A7%3C/text%3E%3C/svg%3E">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:"PingFang SC","Microsoft YaHei","Hiragino Sans GB",sans-serif;
+  min-height:100vh;padding:48px 20px 70px;
+  background:linear-gradient(180deg,#cfe9ff 0%,#e9f5ff 45%,#eefaf1 72%,#dcf2e4 100%);
+  color:#2f4858;-webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:900px;margin:0 auto}
+h1{
+  text-align:center;font-size:clamp(30px,6vw,46px);letter-spacing:.06em;
+  color:#1f3b4d;text-shadow:0 2px 12px rgba(255,255,255,.9);
+}
+.sub{text-align:center;margin-top:12px;font-size:clamp(13px,2.6vw,16px);color:#5b7c8d;line-height:1.7}
+.grid{display:grid;gap:18px;margin-top:38px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.card{
+  background:rgba(255,255,255,.86);border-radius:20px;padding:24px 22px;
+  box-shadow:0 10px 30px rgba(70,120,140,.16),inset 0 0 0 1px rgba(255,255,255,.9);
+  display:flex;flex-direction:column;
+}
+.card h2{font-size:17px;color:#1f3b4d;letter-spacing:.03em}
+.card p{margin-top:10px;font-size:13.5px;line-height:1.75;color:#5b7c8d;flex:1}
+.btn{
+  display:inline-block;margin-top:18px;padding:12px 20px;border-radius:999px;text-align:center;
+  text-decoration:none;font-weight:700;font-size:14.5px;letter-spacing:.05em;
+  background:#fff;color:#2b6ea8;border:1.5px solid #b9dcf5;
+  transition:transform .2s ease,box-shadow .2s ease;
+}
+.btn:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(80,140,190,.25)}
+.btn.main{
+  background:linear-gradient(135deg,#6fb3ef,#2b7fd4);color:#fff;border:none;
+  box-shadow:0 10px 24px rgba(43,127,212,.4);
+}
+.btn.main:hover{box-shadow:0 14px 30px rgba(43,127,212,.5)}
+.sec{margin-top:46px;font-size:19px;color:#1f3b4d;letter-spacing:.05em}
+.rules{
+  margin-top:16px;background:rgba(255,255,255,.72);border-radius:18px;padding:22px 24px;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.9);
+}
+.rules li{list-style:none;font-size:13.5px;line-height:2.05;color:#48697b}
+.rules li b{color:#2b6ea8}
+.foot{margin-top:34px;text-align:center;font-size:12.5px;color:#7b95a4;line-height:1.9}
+.back{display:block;text-align:center;margin-top:26px;font-size:13px;color:#5b7c8d}
+.back a{color:#2b6ea8;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>🐧 企鹅桌宠</h1>
+  <p class="sub">一只会歪头看你、会自己散步、还会提醒你喝水的小企鹅<br>纯 CSS 绘制 · 无任何外部依赖</p>
+
+  <div class="grid">
+    <div class="card">
+      <h2>🌐 在线试玩</h2>
+      <p>不用下载，点开立刻玩，手机也支持。鼠标靠近它会歪头看你，单击会扑腾，双击会撒花，右键有互动菜单。</p>
+      <a class="btn" href="play.html">立即试玩 →</a>
+    </div>
+
+    <div class="card">
+      <h2>💻 桌面悬浮版（推荐）</h2>
+      <p>解压即用、免安装。企鹅会浮在所有窗口之上，而且点击穿透——完全不挡你操作电脑。Windows 10/11 64 位。</p>
+      <a class="btn main" href="https://github.com/tianyu5666/tianyu5666.github.io/releases/latest/download/PenguinPet-Windows-x64.zip">下载 Windows 版</a>
+    </div>
+
+    <div class="card">
+      <h2>🪶 轻量版（约 10KB）</h2>
+      <p>零安装：解压后双击 bat，用系统自带浏览器开一个小窗口。适合只想尝鲜、或网络较慢的朋友。</p>
+      <a class="btn" href="https://github.com/tianyu5666/tianyu5666.github.io/releases/latest/download/PenguinPet-Lite.zip">下载轻量版</a>
+    </div>
+  </div>
+
+  <h2 class="sec">玩法说明</h2>
+  <ul class="rules">
+    <li>🖱️ <b>鼠标靠近</b>：眼睛跟着你转、歪头、腮红加深，还会主动凑过来</li>
+    <li>👆 <b>单击</b>：缩一下 → 开心扑腾翅膀 → 冒"啾~"</li>
+    <li>✨ <b>双击</b>：跳起来转一圈 + 撒花，然后害羞地低头</li>
+    <li>✋ <b>拖拽</b>：按住可以拖到任何地方，松手会落回地面站稳</li>
+    <li>🖱️ <b>右键</b>：🍣喂鱼 / 🤚摸头 / 😴睡觉起床 / 🎨换皮肤（3 款）/ 🚪退出</li>
+    <li>🕒 <b>不理它</b>：会自己散步、东张西望、坐下休息、整理羽毛；2 分钟变无聊，5 分钟开始打瞌睡；每 1 小时提醒你站起来活动一下</li>
+  </ul>
+
+  <p class="foot">
+    首次运行桌面版若出现蓝色的「Windows 已保护你的电脑」提示：点「更多信息」→「仍要运行」即可（个人小应用没有代码签名证书，属正常现象）。<br>
+    退出方式：右键企鹅 → 🚪 退出桌宠，或按快捷键 Ctrl + Shift + Q
+  </p>
+
+  <p class="back"><a href="/">← 返回首页</a></p>
+</div>
+</body>
+</html>
