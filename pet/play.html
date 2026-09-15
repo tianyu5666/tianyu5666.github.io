@@ -125,16 +125,41 @@ body.electron #hint{display:none}
   background:linear-gradient(180deg,var(--beak),#ef9d16);
   border-radius:50% 50% 50% 50% / 34% 34% 92% 92%;transition:transform .15s}
 
-/* 围巾（只有蓝色围巾款显示） */
+/* 围巾（蓝色围巾款 / 极光款显示，颜色可用 --scarf1/2 定制） */
 .scarf{display:none;position:absolute;left:13px;top:63px;width:70px;height:14px;z-index:6;
-  border-radius:8px;background:linear-gradient(180deg,#6aa8ff,#3f7fe0);
+  border-radius:8px;background:linear-gradient(180deg,var(--scarf1,#6aa8ff),var(--scarf2,#3f7fe0));
   box-shadow:inset 0 -2px 3px rgba(0,0,0,.16)}
 .scarf i{position:absolute;right:7px;top:9px;width:14px;height:26px;border-radius:6px;
-  background:linear-gradient(180deg,#5b9bff,#3a76d6);transform:rotate(-7deg)}
-.skin-scarf .scarf{display:block}
+  background:linear-gradient(180deg,var(--scarf1,#5b9bff),var(--scarf2,#3a76d6));transform:rotate(-7deg)}
+.skin-scarf .scarf,.skin-aurora .scarf{display:block}
+
+/* 蝴蝶结（樱花款） */
+.bow{display:none;position:absolute;left:50%;top:95px;width:34px;height:16px;margin-left:-17px;z-index:7}
+.bow::before,.bow::after{content:"";position:absolute;top:0;width:15px;height:16px;
+  border-radius:60% 40% 60% 40%;background:linear-gradient(180deg,#ffa8cb,#ef5f9c)}
+.bow::before{left:0;transform:rotate(-8deg)}
+.bow::after{right:0;transform:rotate(8deg)}
+.bow i{position:absolute;left:50%;top:3px;width:9px;height:10px;margin-left:-4.5px;z-index:2;
+  border-radius:50%;background:linear-gradient(180deg,#ffc2da,#e8488a)}
+.skin-sakura .bow{display:block}
+
+/* 头顶小花（樱花款） */
+.flower-top{display:none;position:absolute;left:50%;top:-10px;margin-left:-8px;width:16px;height:16px;z-index:8}
+.flower-top::before{content:"❀";position:absolute;left:0;top:-2px;font-size:16px;color:#ff9ec4;
+  text-shadow:0 1px 3px rgba(255,120,170,.5)}
+.skin-sakura .flower-top{display:block}
+
+/* 小圆帽（暖阳款） */
+.hat{display:none;position:absolute;left:50%;top:-10px;width:40px;height:22px;margin-left:-20px;z-index:8}
+.hat::before{content:"";position:absolute;left:0;bottom:0;width:40px;height:6px;border-radius:6px;
+  background:#e59a33}
+.hat::after{content:"";position:absolute;left:8px;bottom:4px;width:24px;height:15px;
+  border-radius:12px 12px 4px 4px;background:linear-gradient(180deg,#ffd489,#f0a53a);
+  box-shadow:inset 0 -2px 3px rgba(0,0,0,.12)}
+.skin-sunny .hat{display:block}
 
 /* ============================================================
-   🎨 三种皮肤
+   🎨 六款皮肤（每款就是一组颜色变量，可自由增删）
    ============================================================ */
 .skin-classic{--body:#2c3138;--body2:#171b21;--body-hi:#4a525c;--belly:#ffffff;--facec:#ffffff;
   --cheek:#ff8fb0;--cheek-op:.35;--beak:#ffb340;--foot:#ffb340}
@@ -142,6 +167,12 @@ body.electron #hint{display:none}
   --cheek:#ff5f95;--cheek-op:.85;--beak:#ffa9bf;--foot:#ffa8bd}
 .skin-scarf{--body:#2c3138;--body2:#171b21;--body-hi:#4a525c;--belly:#ffffff;--facec:#ffffff;
   --cheek:#ff8fb0;--cheek-op:.42;--beak:#ffb340;--foot:#ffb340}
+.skin-sakura{--body:#4a3340;--body2:#2e1f27;--body-hi:#6d4a58;--belly:#fff2f7;--facec:#fff7fa;
+  --cheek:#ff6fa5;--cheek-op:.8;--beak:#ff9fbb;--foot:#ff9fbb}
+.skin-aurora{--body:#26364f;--body2:#141f30;--body-hi:#44618a;--belly:#eef6ff;--facec:#f6fbff;
+  --cheek:#7fb6ff;--cheek-op:.6;--beak:#8fd0ff;--foot:#8fd0ff;--scarf1:#8fd3ff;--scarf2:#4a7fd6}
+.skin-sunny{--body:#4a3a2c;--body2:#2c2119;--body-hi:#6f5540;--belly:#fff6e8;--facec:#fffaef;
+  --cheek:#ffab5e;--cheek-op:.7;--beak:#ffb43c;--foot:#ffb43c}
 
 /* ============================================================
    😊 情绪：开心 / 好奇 / 无聊 / 困倦
@@ -365,6 +396,9 @@ body.electron #hint{display:none}
           </div>
         </div>
         <div class="scarf"><i></i></div>
+        <div class="bow"><i></i></div>
+        <div class="hat"></div>
+        <div class="flower-top"></div>
       </div>
     </div>
   </div>
@@ -409,17 +443,53 @@ var CONFIG = {
   happyMax: 10                  // 开心值上限
 };
 
-/* 💬 台词库（按情绪分组，可自由增删） */
+/* 💬 台词库（按情绪分组，共 28 句，温柔体贴可爱风；可自由增删） */
 var LINES = {
-  happy: ["今天天气真好呀~","你好厉害！","一起加油鸭！","嘿嘿，最喜欢你了","陪你一起哦~"],
-  bored: ["好无聊哦...","陪陪我嘛🥺","你在干嘛呀？","点点我嘛~"],
-  sleepy:["好困啊...","呼啊~","晚安...","让我眯一会儿..."],
-  common:["记得喝水哦~","起来活动一下吧~","坐久了要伸个懒腰哦"]
+  happy: [
+    "今天也要加油鸭~",
+    "有你陪着，我走路都带风~",
+    "你今天气色很好呀，看起来超棒的",
+    "嘿嘿，我把最好的心情留给你",
+    "慢慢来，我一直都在哦",
+    "你今天已经很努力啦，辛苦啦",
+    "要不要摸摸我的头？我很好哄的~",
+    "你笑一下，我就开心一整天"
+  ],
+  bored: [
+    "好无聊哦…陪我说说话嘛🥺",
+    "你在忙吗？我不吵你，就在这儿等你",
+    "点点我嘛，我超级好哄的~",
+    "我一直在这儿陪着你呢",
+    "忙完了记得看看我呀",
+    "你在干嘛呀？我有点好奇~"
+  ],
+  sleepy: [
+    "好困啊…你也早点休息好不好？",
+    "呼啊~ 我打个盹儿，就一小会儿",
+    "晚安…做个好梦呀",
+    "困了就陪我一起休息吧",
+    "夜深了，别熬太晚哦",
+    "被子分你一半，我先眯一下~"
+  ],
+  common: [
+    "记得喝水哦~",
+    "坐久了站起来活动一下吧~",
+    "眼睛累了就看看远处，顺便看看我",
+    "肩膀酸的话，转一转脖子哦",
+    "天冷了记得加件衣服",
+    "吃饭要按时呀，别饿着自己",
+    "深呼吸一下，放松放松~",
+    "你已经做得很好了，别太苛责自己"
+  ]
 };
+/* 🎨 六款皮肤（切换后会自动记住，下次打开还是它） */
 var SKINS = [
-  {cls:"skin-classic", name:"经典款"},
-  {cls:"skin-blush",   name:"粉粉腮红款"},
-  {cls:"skin-scarf",   name:"蓝色围巾款"}
+  {cls:"skin-classic", name:"经典黑白"},
+  {cls:"skin-blush",   name:"粉粉腮红"},
+  {cls:"skin-scarf",   name:"蓝色围巾"},
+  {cls:"skin-sakura",  name:"樱花蝴蝶结"},
+  {cls:"skin-aurora",  name:"极光蓝围巾"},
+  {cls:"skin-sunny",   name:"暖阳小圆帽"}
 ];
 var FLOWERS = ["🌸","❀","✨","⭐","💮","🌼","💖"];
 
@@ -747,11 +817,16 @@ function actionSleep(){
   }
 }
 function actionSkin(){
-  state.skinIndex = (state.skinIndex + 1) % SKINS.length;
-  pet.classList.remove("skin-classic", "skin-blush", "skin-scarf");
-  pet.classList.add(SKINS[state.skinIndex].cls);
-  say("换好啦！这是「" + SKINS[state.skinIndex].name + "」", 2400);
+  applySkin(state.skinIndex + 1);
+  say("换好啦！这是「" + SKINS[state.skinIndex].name + "」（共 " + SKINS.length + " 款）", 2600);
   touchInteraction(false);
+}
+/* 应用皮肤（自动记住选择，下次打开还是这款） */
+function applySkin(i){
+  state.skinIndex = ((i % SKINS.length) + SKINS.length) % SKINS.length;
+  SKINS.forEach(function(s){ pet.classList.remove(s.cls); });
+  pet.classList.add(SKINS[state.skinIndex].cls);
+  try { localStorage.setItem("petSkinIndex", String(state.skinIndex)); } catch (e) {}
 }
 
 /* ============================================================
@@ -962,6 +1037,10 @@ function init(){
   render();
   applyFacing();
   setMood("happy");
+  /* 恢复上次选择的皮肤（第一次打开是经典黑白） */
+  var savedSkin = 0;
+  try { savedSkin = parseInt(localStorage.getItem("petSkinIndex"), 10) || 0; } catch (e) { savedSkin = 0; }
+  applySkin(savedSkin);
   scheduleBlink();
   scheduleTalk();
   scheduleAction();
