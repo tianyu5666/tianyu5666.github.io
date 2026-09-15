@@ -1,0 +1,25 @@
+﻿企鹅桌宠 · 国内网络下载说明（不依赖 GitHub 下载服务器）
+=====================================================
+
+为什么有这个页面？
+  GitHub 的文件下载服务器（objects.githubusercontent.com）在国内经常被阻断，
+  点下载会出现"没反应 / 失败 / 一直转圈"。而本页面所在的 github.io 一直可访问，
+  所以这里提供了分片镜像，下载更稳。
+
+怎么下载桌面版（分三步，1 分钟）
+  1) 下载这两个分片（都在本页面同一个下载链接区）：
+        PenguinPet-Windows-x64.zip.001
+        PenguinPet-Windows-x64.zip.002
+  2) 再下载合并脚本：
+        merge-and-unzip.bat
+  3) 把上面 3 个文件放进同一个文件夹，双击 merge-and-unzip.bat
+     → 自动合并出 PenguinPet-Windows-x64.zip → 解压 → 双击 PenguinPet.exe 完成！
+
+  提示：
+   · 合并脚本用的是 Windows 自带命令，不需要装任何软件
+   · 分片必须两个都下载完整，缺一个无法合并
+   · 如果浏览器把 .bat 文件后缀改了（例如 .bat.txt），重命名回 .bat 即可
+
+只想尝鲜？
+  下载 PenguinPet-Lite.zip（约 16KB），解压后双击 start.bat，
+  用系统自带浏览器开个小窗口就能玩（缺点是企鹅不会悬浮在其他窗口之上）。
