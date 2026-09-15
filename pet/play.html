@@ -131,7 +131,7 @@ body.electron #hint{display:none}
   box-shadow:inset 0 -2px 3px rgba(0,0,0,.16)}
 .scarf i{position:absolute;right:7px;top:9px;width:14px;height:26px;border-radius:6px;
   background:linear-gradient(180deg,var(--scarf1,#5b9bff),var(--scarf2,#3a76d6));transform:rotate(-7deg)}
-.skin-scarf .scarf,.skin-aurora .scarf{display:block}
+.skin-scarf .scarf,.skin-aurora .scarf,.skin-christmas .scarf,.skin-newyear .scarf{display:block}
 
 /* 蝴蝶结（樱花款） */
 .bow{display:none;position:absolute;left:50%;top:95px;width:34px;height:16px;margin-left:-17px;z-index:7}
@@ -158,27 +158,62 @@ body.electron #hint{display:none}
   box-shadow:inset 0 -2px 3px rgba(0,0,0,.12)}
 .skin-sunny .hat{display:block}
 
+/* 圣诞帽（圣诞限定款） */
+.santa{display:none;position:absolute;left:50%;top:-16px;width:46px;height:28px;margin-left:-23px;z-index:9}
+.santa::before{content:"";position:absolute;left:7px;bottom:6px;width:32px;height:22px;
+  border-radius:50% 50% 18% 18% / 72% 72% 28% 28%;
+  background:linear-gradient(180deg,#e8433f,#b71c1c);transform:rotate(-10deg)}
+.santa::after{content:"";position:absolute;left:0;bottom:0;width:46px;height:9px;border-radius:7px;
+  background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.santa i{position:absolute;right:-3px;top:-8px;width:13px;height:13px;border-radius:50%;background:#fff;
+  box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.skin-christmas .santa{display:block}
+
+/* 金色小皇冠（新年限定款） */
+.crown{display:none;position:absolute;left:50%;top:-13px;width:38px;height:20px;margin-left:-19px;z-index:9}
+.crown::before{content:"";position:absolute;left:0;bottom:0;width:38px;height:7px;border-radius:4px;
+  background:linear-gradient(180deg,#ffe08a,#dfa123)}
+.crown::after{content:"";position:absolute;left:2px;bottom:6px;width:34px;height:13px;
+  background:linear-gradient(180deg,#ffeaa8,#f0b53c);
+  clip-path:polygon(0 100%,10% 0,27% 62%,50% 0,73% 62%,90% 0,100% 100%)}
+.skin-newyear .crown{display:block}
+
 /* ============================================================
-   🎨 六款皮肤（每款就是一组颜色变量，可自由增删）
+   🎨 十一款皮肤（每款就是一组颜色变量，可自由增删）
+   粉系：粉粉腮红 · 樱花蝴蝶结 · 玫瑰粉 · 蜜桃粉 · 棉花糖
+   节日限定：圣诞 · 新年
    ============================================================ */
-.skin-classic{--body:#2c3138;--body2:#171b21;--body-hi:#4a525c;--belly:#ffffff;--facec:#ffffff;
+/* 注意：必须写成 #pet.skin-xxx，否则会被上面的 #pet 默认变量覆盖（ID 优先级更高） */
+#pet.skin-classic{--body:#2c3138;--body2:#171b21;--body-hi:#4a525c;--belly:#ffffff;--facec:#ffffff;
   --cheek:#ff8fb0;--cheek-op:.35;--beak:#ffb340;--foot:#ffb340}
-.skin-blush{--body:#3a2b34;--body2:#241820;--body-hi:#5a4450;--belly:#fff4f8;--facec:#fff9fb;
+#pet.skin-blush{--body:#3a2b34;--body2:#241820;--body-hi:#5a4450;--belly:#fff4f8;--facec:#fff9fb;
   --cheek:#ff5f95;--cheek-op:.85;--beak:#ffa9bf;--foot:#ffa8bd}
-.skin-scarf{--body:#2c3138;--body2:#171b21;--body-hi:#4a525c;--belly:#ffffff;--facec:#ffffff;
+#pet.skin-scarf{--body:#2c3138;--body2:#171b21;--body-hi:#4a525c;--belly:#ffffff;--facec:#ffffff;
   --cheek:#ff8fb0;--cheek-op:.42;--beak:#ffb340;--foot:#ffb340}
-.skin-sakura{--body:#4a3340;--body2:#2e1f27;--body-hi:#6d4a58;--belly:#fff2f7;--facec:#fff7fa;
+#pet.skin-sakura{--body:#4a3340;--body2:#2e1f27;--body-hi:#6d4a58;--belly:#fff2f7;--facec:#fff7fa;
   --cheek:#ff6fa5;--cheek-op:.8;--beak:#ff9fbb;--foot:#ff9fbb}
-.skin-aurora{--body:#26364f;--body2:#141f30;--body-hi:#44618a;--belly:#eef6ff;--facec:#f6fbff;
+#pet.skin-aurora{--body:#26364f;--body2:#141f30;--body-hi:#44618a;--belly:#eef6ff;--facec:#f6fbff;
   --cheek:#7fb6ff;--cheek-op:.6;--beak:#8fd0ff;--foot:#8fd0ff;--scarf1:#8fd3ff;--scarf2:#4a7fd6}
-.skin-sunny{--body:#4a3a2c;--body2:#2c2119;--body-hi:#6f5540;--belly:#fff6e8;--facec:#fffaef;
+#pet.skin-sunny{--body:#4a3a2c;--body2:#2c2119;--body-hi:#6f5540;--belly:#fff6e8;--facec:#fffaef;
   --cheek:#ffab5e;--cheek-op:.7;--beak:#ffb43c;--foot:#ffb43c}
+/* —— 粉系三款 —— */
+#pet.skin-rose{--body:#e8629b;--body2:#c33d76;--body-hi:#ff9dc4;--belly:#fff5f9;--facec:#fffafc;
+  --cheek:#ff2e74;--cheek-op:.7;--beak:#ff9ec4;--foot:#ff9ec4}
+#pet.skin-peach{--body:#f0937f;--body2:#cf6a58;--body-hi:#ffbda9;--belly:#fff7f2;--facec:#fffaf6;
+  --cheek:#ff7f6b;--cheek-op:.65;--beak:#ffb27a;--foot:#ffb27a}
+#pet.skin-cotton{--body:#e9a6d8;--body2:#c274b4;--body-hi:#ffc9ef;--belly:#fdf5ff;--facec:#fffafe;
+  --cheek:#ff86cf;--cheek-op:.75;--beak:#ffb0e0;--foot:#ffb0e0}
+/* —— 节日限定两款 —— */
+#pet.skin-christmas{--body:#8c2326;--body2:#541214;--body-hi:#b83b3d;--belly:#fff5f5;--facec:#fffafa;
+  --cheek:#ff6b6b;--cheek-op:.7;--beak:#ffb340;--foot:#ffb340;--scarf1:#9cdb8e;--scarf2:#418f4a}
+#pet.skin-newyear{--body:#6d1f33;--body2:#3f1120;--body-hi:#9c3350;--belly:#fff4e4;--facec:#fffbf2;
+  --cheek:#ffb347;--cheek-op:.75;--beak:#ffd05c;--foot:#ffd05c;--scarf1:#ffdd85;--scarf2:#d99a20}
 
 /* ============================================================
    😊 情绪：开心 / 好奇 / 无聊 / 困倦
    ============================================================ */
 /* 开心：眼睛弯弯 ^^、腮红明显、身体轻快起伏 */
-.mood-happy{--cheek-op:.75}
+#pet.mood-happy{--cheek-op:.75}
 .mood-happy .eye{background:transparent;height:9px;border-radius:50% 50% 0 0;
   border-top:3px solid #23262e}
 .mood-happy .eye .glint{display:none}
@@ -189,7 +224,7 @@ body.electron #hint{display:none}
 /* 好奇：头歪向一边，眼睛睁大，身体微微前倾 */
 .mood-curious .pet-inner{transform:rotate(-4deg)}
 .mood-curious .eye{width:14px;height:17px;top:14px}
-.mood-curious{--cheek-op:.6}
+#pet.mood-curious{--cheek-op:.6}
 .mood-curious .penguin{animation:breathe 1.9s ease-in-out infinite}
 
 /* 无聊：眼神呆滞、身体靠一边、呼吸变慢 */
@@ -255,7 +290,7 @@ body.electron #hint{display:none}
 .jumping .shadow{transform:scale(.72);opacity:.45}
 
 /* 害羞：低头、腮红拉满 */
-.shy{--cheek-op:1}
+#pet.shy{--cheek-op:1}
 .shy .face{transform:translateY(5px)}
 .shy .head{transform:rotate(9deg)}
 
@@ -331,6 +366,36 @@ body.electron #hint{display:none}
 #menu .item:hover .label{opacity:1}
 
 /* ============================================================
+   ✏️ 改称呼小面板
+   ============================================================ */
+#nameBox{
+  position:fixed;left:50%;top:50%;transform:translate(-50%,-46%) scale(.92);
+  width:min(300px,86vw);padding:20px 20px 16px;z-index:80;
+  background:linear-gradient(165deg,rgba(255,253,254,.97),rgba(255,238,246,.95));
+  border:1px solid rgba(255,255,255,.95);border-radius:18px;
+  box-shadow:0 18px 46px rgba(180,60,110,.28), inset 0 0 0 4px rgba(255,255,255,.45);
+  text-align:center;opacity:0;visibility:hidden;pointer-events:none;
+  transition:opacity .25s ease,transform .25s ease,visibility 0s .25s;
+}
+#nameBox.show{opacity:1;visibility:visible;pointer-events:auto;
+  transform:translate(-50%,-50%) scale(1);transition:opacity .25s ease,transform .25s ease}
+#nameBox .nb-title{font-size:14px;font-weight:700;color:#a02c5b;letter-spacing:.08em}
+#nameInput{
+  margin-top:14px;width:100%;padding:10px 12px;border-radius:12px;font-size:14px;
+  border:1.5px solid #ffc9dd;background:#fff;color:#5a3a48;outline:none;text-align:center;
+  font-family:inherit;
+}
+#nameInput:focus{border-color:#ff8fb0;box-shadow:0 0 0 3px rgba(255,143,176,.25)}
+#nameBox .nb-row{margin-top:14px;display:flex;gap:10px;justify-content:center}
+#nameBox button{
+  border:none;cursor:pointer;border-radius:999px;padding:9px 18px;font-size:13.5px;font-weight:700;
+  font-family:inherit;transition:transform .18s ease,box-shadow .18s ease;
+}
+#nameOk{background:linear-gradient(135deg,#ff7aa8,#e91e63);color:#fff;box-shadow:0 6px 16px rgba(233,30,99,.35)}
+#nameCancel{background:#fff;color:#8b8f95;border:1.5px solid #e3e6ea}
+#nameBox button:hover{transform:translateY(-1px)}
+
+/* ============================================================
    ✨ 特效层（撒花 / 爱心 / 鱼 / Zzz）
    ============================================================ */
 #fx{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:50}
@@ -399,6 +464,8 @@ body.electron #hint{display:none}
         <div class="bow"><i></i></div>
         <div class="hat"></div>
         <div class="flower-top"></div>
+        <div class="santa"><i></i></div>
+        <div class="crown"></div>
       </div>
     </div>
   </div>
@@ -410,7 +477,18 @@ body.electron #hint{display:none}
   <button class="item" data-act="pat">🤚<span class="label">摸头</span></button>
   <button class="item" data-act="sleep">😴<span class="label">睡觉 / 起床</span></button>
   <button class="item" data-act="skin">🎨<span class="label">换皮肤</span></button>
+  <button class="item" data-act="name">✏️<span class="label">改称呼</span></button>
   <button class="item" data-act="quit" id="quitItem" style="display:none">🚪<span class="label">退出桌宠</span></button>
+</div>
+
+<!-- ✏️ 改称呼小面板 -->
+<div id="nameBox">
+  <div class="nb-title">我该怎么称呼你呀？</div>
+  <input id="nameInput" type="text" maxlength="12" placeholder="输入名字或昵称（最多 12 字）">
+  <div class="nb-row">
+    <button id="nameOk" type="button">好呀</button>
+    <button id="nameCancel" type="button">以后再说</button>
+  </div>
 </div>
 
 <!-- ✨ 特效层 -->
@@ -443,55 +521,69 @@ var CONFIG = {
   happyMax: 10                  // 开心值上限
 };
 
-/* 💬 台词库（按情绪分组，共 28 句，温柔体贴可爱风；可自由增删） */
+/* 💬 台词库（按情绪分组，共 32 句；{name} 会自动替换成你设置的称呼） */
 var LINES = {
   happy: [
-    "今天也要加油鸭~",
+    "{name}，今天也要加油鸭~",
     "有你陪着，我走路都带风~",
     "你今天气色很好呀，看起来超棒的",
-    "嘿嘿，我把最好的心情留给你",
+    "嘿嘿，我把最好的心情留给{name}",
     "慢慢来，我一直都在哦",
-    "你今天已经很努力啦，辛苦啦",
+    "{name}今天已经很努力啦，辛苦啦",
     "要不要摸摸我的头？我很好哄的~",
-    "你笑一下，我就开心一整天"
+    "你笑一下，我就开心一整天",
+    "{name}，认识你真好呀"
   ],
   bored: [
     "好无聊哦…陪我说说话嘛🥺",
     "你在忙吗？我不吵你，就在这儿等你",
     "点点我嘛，我超级好哄的~",
-    "我一直在这儿陪着你呢",
+    "我一直在这儿陪着你呢，{name}",
     "忙完了记得看看我呀",
-    "你在干嘛呀？我有点好奇~"
+    "你在干嘛呀？我有点好奇~",
+    "{name}，今天过得还顺利吗？"
   ],
   sleepy: [
     "好困啊…你也早点休息好不好？",
     "呼啊~ 我打个盹儿，就一小会儿",
-    "晚安…做个好梦呀",
+    "晚安…做个好梦呀，{name}",
     "困了就陪我一起休息吧",
     "夜深了，别熬太晚哦",
-    "被子分你一半，我先眯一下~"
+    "被子分你一半，我先眯一下~",
+    "{name}，梦里也要开开心心的"
   ],
   common: [
     "记得喝水哦~",
     "坐久了站起来活动一下吧~",
     "眼睛累了就看看远处，顺便看看我",
     "肩膀酸的话，转一转脖子哦",
-    "天冷了记得加件衣服",
+    "天冷了记得加件衣服，{name}",
     "吃饭要按时呀，别饿着自己",
     "深呼吸一下，放松放松~",
-    "你已经做得很好了，别太苛责自己"
+    "你已经做得很好了，别太苛责自己",
+    "{name}，我一直在你身边哦"
   ]
 };
-/* 🎨 六款皮肤（切换后会自动记住，下次打开还是它） */
+/* 🎨 十一款皮肤（切换后会自动记住，下次打开还是它）
+   粉系：粉粉腮红 / 樱花蝴蝶结 / 玫瑰粉 / 蜜桃粉 / 棉花糖
+   节日限定：圣诞 / 新年 */
 var SKINS = [
-  {cls:"skin-classic", name:"经典黑白"},
-  {cls:"skin-blush",   name:"粉粉腮红"},
-  {cls:"skin-scarf",   name:"蓝色围巾"},
-  {cls:"skin-sakura",  name:"樱花蝴蝶结"},
-  {cls:"skin-aurora",  name:"极光蓝围巾"},
-  {cls:"skin-sunny",   name:"暖阳小圆帽"}
+  {cls:"skin-classic",   name:"经典黑白"},
+  {cls:"skin-blush",     name:"粉粉腮红"},
+  {cls:"skin-scarf",     name:"蓝色围巾"},
+  {cls:"skin-sakura",    name:"樱花蝴蝶结"},
+  {cls:"skin-aurora",    name:"极光蓝围巾"},
+  {cls:"skin-sunny",     name:"暖阳小圆帽"},
+  {cls:"skin-rose",      name:"玫瑰粉"},
+  {cls:"skin-peach",     name:"蜜桃粉"},
+  {cls:"skin-cotton",    name:"棉花糖粉紫"},
+  {cls:"skin-christmas", name:"🎄圣诞限定"},
+  {cls:"skin-newyear",   name:"🎆新年限定"}
 ];
+/* 撒花用的符号（节日限定皮肤会自动换成节日元素） */
 var FLOWERS = ["🌸","❀","✨","⭐","💮","🌼","💖"];
+var FLOWERS_XMAS = ["❄","🎄","🎁","⭐","✨"];
+var FLOWERS_NY   = ["🎆","🎊","🧧","✨","🏮"];
 
 /* ============================================================
    🔌 环境判断：浏览器 or Electron
@@ -525,7 +617,8 @@ var state = {
   walking: false,
   dragging: false,
   menuOpen: false,
-  skinIndex: 0
+  skinIndex: 0,
+  userName: ""            // 用户设置的称呼（会存进 localStorage）
 };
 var mouse = { x: -9999, y: -9999, dist: 99999 };
 var layout = { xMin: 6, xMax: 100, yMax: 100 };
@@ -760,6 +853,7 @@ pet.addEventListener("contextmenu", function(e){
 document.addEventListener("contextmenu", function(e){ e.preventDefault(); });
 document.addEventListener("pointerdown", function(e){
   if (state.menuOpen && !e.target.closest("#menu") && !e.target.closest("#pet")) closeMenu();
+  if (e.target.closest && !e.target.closest("#nameBox") && !e.target.closest("#menu")) closeNameBox();
 });
 window.addEventListener("keydown", function(e){ if (e.key === "Escape") closeMenu(); });
 
@@ -772,7 +866,37 @@ menu.addEventListener("click", function(e){
   if (act === "pat")   actionPat();
   if (act === "sleep") actionSleep();
   if (act === "skin")  actionSkin();
+  if (act === "name")  openNameBox();
   if (act === "quit"){ if (ipc) ipc.send("pet-quit"); }
+});
+
+/* ============================================================
+   ✏️ 改称呼：让企鹅叫你的名字
+   ============================================================ */
+var nameBox = document.getElementById("nameBox");
+var nameInput = document.getElementById("nameInput");
+function openNameBox(){
+  nameInput.value = state.userName || "";
+  nameBox.classList.add("show");
+  setTimeout(function(){ try { nameInput.focus(); } catch (e) {} }, 120);
+  touchInteraction(false);
+}
+function closeNameBox(){ nameBox.classList.remove("show"); }
+function saveName(){
+  var v = (nameInput.value || "").trim().slice(0, 12);
+  state.userName = v;
+  try { localStorage.setItem("petUserName", v); } catch (e) {}
+  closeNameBox();
+  if (v) say("记住啦，" + v + "！以后我就这么叫你~", 3000);
+  else   say("好呀，那我就先喊你「你」啦~", 2600);
+  addTmp("flap", 800);
+  touchInteraction(true);
+}
+document.getElementById("nameOk").addEventListener("click", saveName);
+document.getElementById("nameCancel").addEventListener("click", closeNameBox);
+nameInput.addEventListener("keydown", function(e){
+  if (e.key === "Enter") saveName();
+  if (e.key === "Escape") closeNameBox();
 });
 
 /* ============================================================
@@ -909,8 +1033,13 @@ function walkTo(targetX, cb, short){
    💬 气泡碎碎念 + 每小时提醒
    ============================================================ */
 var sayTimer = null, talkTimer = null;
+/* 把台词里的 {name} 换成用户设置的称呼 */
+function fillName(text){
+  var n = state.userName || "你";
+  return String(text).split("{name}").join(n);
+}
 function say(text, ms, big){
-  bubble.textContent = text;
+  bubble.textContent = fillName(text);
   bubble.classList.toggle("big", !!big);
   /* 靠边时气泡往回收，避免超出窗口 */
   var c = petCenter(), off = 0;
@@ -935,7 +1064,7 @@ function scheduleTalk(){
 }
 /* 每 1 小时：站起来活动提醒 */
 setInterval(function(){
-  say("已经坐了很久啦，站起来活动活动吧！💦", 6500, true);
+  say("{name}，已经坐了很久啦，站起来活动活动吧！💦", 6800, true);
   addTmp("flap", 900);
 }, CONFIG.hourlyMs);
 
@@ -957,12 +1086,20 @@ function scheduleBlink(){
 /* ============================================================
    ✨ 特效生成
    ============================================================ */
+/* 当前皮肤对应的撒花符号（节日限定皮肤会撒节日元素） */
+function currentFlowers(){
+  var cls = SKINS[state.skinIndex] ? SKINS[state.skinIndex].cls : "";
+  if (cls === "skin-christmas") return FLOWERS_XMAS;
+  if (cls === "skin-newyear")   return FLOWERS_NY;
+  return FLOWERS;
+}
 function burst(x, y, n){
   n = n || 12;
+  var pool = currentFlowers();
   for (var i = 0; i < n; i++){
     var el = document.createElement("span");
     el.className = "fx";
-    el.textContent = pick(FLOWERS);
+    el.textContent = pick(pool);
     el.style.setProperty("--x", x + "px");
     el.style.setProperty("--y", y + "px");
     var a = Math.random() * Math.PI * 2;
@@ -1041,11 +1178,20 @@ function init(){
   var savedSkin = 0;
   try { savedSkin = parseInt(localStorage.getItem("petSkinIndex"), 10) || 0; } catch (e) { savedSkin = 0; }
   applySkin(savedSkin);
+  /* 恢复上次设置的称呼 */
+  try { state.userName = localStorage.getItem("petUserName") || ""; } catch (e) { state.userName = ""; }
   scheduleBlink();
   scheduleTalk();
   scheduleAction();
-  /* 开场打个招呼 */
-  setTimeout(function(){ say("你好呀！右键点我可以互动哦~", 4200); }, 1200);
+  /* 开场打个招呼（有称呼就直接叫名字） */
+  setTimeout(function(){
+    say(state.userName ? ("欢迎回来呀，" + state.userName + "！右键点我可以互动哦~")
+                       : "你好呀！右键点我可以互动哦~", 4400);
+  }, 1200);
+  /* 还没设置称呼的话，过一会儿提醒一下 */
+  if (!state.userName){
+    setTimeout(function(){ say("对了，右键 → ✏️改称呼，我就能叫你的名字啦~", 5000); }, 12000);
+  }
   /* Electron 模式：默认穿透鼠标，桌面正常使用 */
   setIgnore(true);
 }
