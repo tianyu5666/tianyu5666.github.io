@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>版本里程碑 · 元宵企鹅桌宠 🐧</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%90%A7%3C/text%3E%3C/svg%3E">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:"PingFang SC","Microsoft YaHei","Hiragino Sans GB",sans-serif;
+  min-height:100vh;padding:44px 18px 70px;color:#2f4858;
+  background:linear-gradient(180deg,#cfe9ff 0%,#e9f5ff 45%,#eefaf1 72%,#dcf2e4 100%);
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:860px;margin:0 auto}
+h1{text-align:center;font-size:clamp(26px,5.4vw,40px);color:#1f3b4d;letter-spacing:.04em}
+.sub{text-align:center;margin-top:10px;font-size:clamp(12.5px,2.4vw,15px);color:#5b7c8d;line-height:1.7}
+.timeline{margin-top:36px;position:relative;padding-left:26px}
+.timeline::before{content:"";position:absolute;left:7px;top:8px;bottom:8px;width:3px;
+  background:linear-gradient(180deg,#8fc7f0,#b9e3c6);border-radius:3px}
+.ver{position:relative;margin-bottom:22px;background:rgba(255,255,255,.9);
+  border-radius:18px;padding:20px 22px;box-shadow:0 10px 28px rgba(70,120,140,.14);
+  border:1px solid rgba(255,255,255,.9)}
+.ver::before{content:"";position:absolute;left:-26px;top:26px;width:15px;height:15px;border-radius:50%;
+  background:#fff;border:3px solid #6fb3ef;box-shadow:0 0 0 4px rgba(111,179,239,.18)}
+.ver.latest::before{border-color:#1e9e5a;box-shadow:0 0 0 5px rgba(30,158,90,.2)}
+.ver h2{font-size:17px;color:#1f3b4d;display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.ver .tag{font-size:11.5px;font-weight:700;color:#fff;background:#6fb3ef;border-radius:999px;padding:2px 10px}
+.ver.latest .tag{background:#1e9e5a}
+.ver .when{font-size:12px;color:#7b95a4;margin-left:auto}
+.ver ul{margin:12px 0 0 2px;list-style:none}
+.ver li{font-size:13.5px;line-height:1.85;color:#48697b;padding-left:16px;position:relative}
+.ver li::before{content:"·";position:absolute;left:2px;color:#8fc7f0;font-weight:900}
+.ver li b{color:#2b6ea8}
+.ver .dl{margin-top:14px;display:flex;flex-wrap:wrap;gap:8px}
+.ver .dl a{
+  font-size:12.5px;text-decoration:none;color:#2b6ea8;background:#f2f9ff;border:1.5px solid #cbe6fb;
+  border-radius:999px;padding:7px 13px;font-weight:700;transition:transform .15s,box-shadow .15s;
+}
+.ver .dl a:hover{transform:translateY(-1px);box-shadow:0 6px 14px rgba(80,140,190,.22)}
+.ver .dl a.main{background:linear-gradient(135deg,#6fb3ef,#2b7fd4);color:#fff;border-color:transparent}
+.note{margin-top:30px;background:rgba(255,255,255,.75);border-radius:16px;padding:18px 20px;
+  font-size:12.8px;line-height:1.9;color:#5b7c8d}
+.back{display:block;text-align:center;margin-top:26px;font-size:13px}
+.back a{color:#2b6ea8;text-decoration:none}
+footer{text-align:center;margin-top:26px;font-size:12px;color:#8aa0b5;line-height:1.9}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🐧 版本里程碑</h1>
+  <p class="sub">
+    元宵企鹅桌宠的每一次迭代都保留在这里，随时能回到任意一个版本。<br>
+    旧版本永久保存在 GitHub Releases 里（每个版本都有独立下载链接）。
+  </p>
+
+  <div class="timeline">
+
+    <!-- ===== v2.1.1 ===== -->
+    <div class="ver latest">
+      <h2>v2.1.1 <span class="tag">最新</span><span class="when">2026-09-19</span></h2>
+      <ul>
+        <li>🗣 <b>三种说话方式</b>：🎵卡通小奶音（软糯清脆、即时合成）/ 🗣童声真人（Windows 童声「瑶瑶」，可调音高语速）/ 🔇不说话</li>
+        <li>🏷 <b>给它起名字</b>：你可以自己给它取名字（默认「元宵」），它会用这个名字称呼自己</li>
+        <li>🐞 修复：鼠标靠近时高光会遮住脸（已移到肚子上、并压到头部后层）</li>
+        <li>⏰ 信息牌不再一直挂着：默认<b>每 2 小时出现一次、亮 1 分钟</b>（可选每小时/常显/不显示）</li>
+        <li>🔊 小奶音重新调音：正弦主音＋轻泛音＋低通柔化＋按标点停顿，更软糯</li>
+      </ul>
+      <div class="dl">
+        <a class="main" href="https://github.com/tianyu5666/tianyu5666.github.io/releases/download/v2.1.1/PenguinPet-Setup-2.1.1.exe">下载安装版</a>
+        <a href="https://github.com/tianyu5666/tianyu5666.github.io/releases/download/v2.1.1/PenguinPet-Windows-x64.zip">免安装绿色版</a>
+        <a href="https://github.com/tianyu5666/tianyu5666.github.io/releases/download/v2.1.1/PenguinPet-Lite.zip">轻量版</a>
+      </div>
+    </div>
+
+    <!-- ===== v2.0 ===== -->
+    <div class="ver">
+      <h2>v2.0 <span class="tag">大版本</span><span class="when">2026-09-19</span></h2>
+      <ul>
+        <li>🐧 <b>3D 立体光影</b>：圆滚滚球体感、跟着鼠标转身（头与身体有视差）、高光会动、转圈是真 3D</li>
+        <li>🎁 <b>双击盲盒</b>：随机 4 种小动作（跳起来摇头 / 转圈冒爱心 / 趴下装睡 / 惊一下冒台词）</li>
+        <li>🍤 <b>投喂小鱼干会变圆</b>；🤚 摸头杀（蹭手、爱心、摸久了傲娇扭头）</li>
+        <li>🎒 <b>4 套造型</b>：默认 / 学霸（眼镜＋书包）/ 摸鱼（树叶＋叼草）/ 节日（小红花）</li>
+        <li>🌙 <b>作息生物钟</b>：白天精神、傍晚打哈欠、深夜犯困、凌晨叫不醒</li>
+        <li>🔊 <b>8 种奶萌音效</b>（代码合成）＋🗣 会说话；⏰ 头顶时钟与倒计时；💗 <b>亲密度养成</b></li>
+        <li>📦 包体从 139MB 瘦到 <b>128.55MB</b>（移除用不到的着色器编译器）</li>
+        <li>🏷 它有了自己的名字：<b>元宵</b></li>
+      </ul>
+      <div class="dl">
+        <a class="main" href="https://github.com/tianyu5666/tianyu5666.github.io/releases/download/v2.0/PenguinPet-Setup-2.0.0.exe">下载安装版</a>
+        <a href="https://github.com/tianyu5666/tianyu5666.github.io/releases/download/v2.0/PenguinPet-Windows-x64.zip">免安装绿色版</a>
+        <a href="https://github.com/tianyu5666/tianyu5666.github.io/releases/download/v2.0/PenguinPet-Lite.zip">轻量版</a>
+      </div>
+    </div>
+
+    <!-- ===== v1.3 ===== -->
+    <div class="ver">
+      <h2>v1.3 <span class="when">2026-09-15</span></h2>
+      <ul>
+        <li>🖱 <b>3 个一键脚本</b>：创建桌面快捷方式 / 开启开机自启 / 取消开机自启（不用再手动右键）</li>
+        <li>💿 安装版也带上这些脚本，装完即用；使用说明重写为傻瓜流程</li>
+      </ul>
+      <div class="dl">
+        <a class="main" href="https://github.com/tianyu5666/tianyu5666.github.io/releases/download/v1.3/PenguinPet-Setup-1.3.0.exe">下载安装版</a>
+        <a href="https://github.com/tianyu5666/tianyu5666.github.io/releases/download/v1.3/PenguinPet-Windows-x64.zip">免安装绿色版</a>
+        <a href="https://github.com/tianyu5666/tianyu5666.github.io/releases/download/v1.3/PenguinPet-Lite.zip">轻量版</a>
+      </div>
+    </div>
+
+    <!-- ===== v1.2 ===== -->
+    <div class="ver">
+      <h2>v1.2 · 会叫你的名字 <span class="when">2026-09-15</span></h2>
+      <ul>
+        <li>💗 <b>会叫你的名字</b>：右键 → 改称呼，台词变成「小瑜，今天也要加油鸭~」</li>
+        <li>🌸 <b>新增 3 款粉色系</b>：玫瑰粉 · 蜜桃粉 · 棉花糖粉紫</li>
+        <li>🎄🎆 <b>新增 2 款节日限定</b>：圣诞（圣诞帽＋绿围巾，撒雪花）· 新年（金皇冠＋金围巾，撒礼花）</li>
+        <li>💬 台词 28 → <b>32 句</b>；🐞 修复「皮肤颜色从未生效」的 CSS 优先级 bug（颜色这才真的变了）</li>
+      </ul>
+      <div class="dl">
+        <a class="main" href="https://github.com/tianyu5666/tianyu5666.github.io/releases/download/v1.2/PenguinPet-Setup-1.2.0.exe">下载安装版</a>
+        <a href="https://github.com/tianyu5666/tianyu5666.github.io/releases/download/v1.2/PenguinPet-Windows-x64.zip">免安装绿色版</a>
+        <a href="https://github.com/tianyu5666/tianyu5666.github.io/releases/download/v1.2/PenguinPet-Lite.zip">轻量版</a>
+      </div>
+    </div>
+
+    <!-- ===== v1.1 ===== -->
+    <div class="ver">
+      <h2>v1.1 <span class="when">2026-09-15</span></h2>
+      <ul>
+        <li>🎨 皮肤 3 → <b>6 款</b>（樱花蝴蝶结 · 极光蓝围巾 · 暖阳小圆帽）</li>
+        <li>💬 台词 16 → <b>28 句</b>，温柔体贴风；换过的皮肤会被记住</li>
+        <li>📦 首次提供 <b>NSIS 安装包</b>，并绘制了 256×256 企鹅图标</li>
+      </ul>
+      <div class="dl">
+        <a class="main" href="https://github.com/tianyu5666/tianyu5666.github.io/releases/download/v1.1/PenguinPet-Setup-1.1.0.exe">下载安装版</a>
+        <a href="https://github.com/tianyu5666/tianyu5666.github.io/releases/download/v1.1/PenguinPet-Windows-x64.zip">免安装绿色版</a>
+        <a href="https://github.com/tianyu5666/tianyu5666.github.io/releases/download/v1.1/PenguinPet-Lite.zip">轻量版</a>
+      </div>
+    </div>
+
+    <!-- ===== v1.0 ===== -->
+    <div class="ver">
+      <h2>v1.0 · 故事的开始 <span class="when">2026-09-15</span></h2>
+      <ul>
+        <li>🐧 纯 CSS 绘制的企鹅：4 种情绪（开心/好奇/无聊/困倦）、眨眼、走路的企鹅</li>
+        <li>🖱 右键圆形菜单：喂鱼 / 摸头 / 睡觉 / 换皮肤（3 款）；拖拽、双击彩蛋</li>
+        <li>🚶 随机散步 AI：走几步停一下、东张西望、坐下休息、整理羽毛、到边缘自动转身</li>
+        <li>💬 碎碎念气泡 + 每小时提醒；🌐 网页版可直接在线试玩</li>
+      </ul>
+      <div class="dl">
+        <a class="main" href="https://github.com/tianyu5666/tianyu5666.github.io/releases/download/v1.0/PenguinPet-Windows-x64.zip">免安装绿色版</a>
+        <a href="https://github.com/tianyu5666/tianyu5666.github.io/releases/download/v1.0/PenguinPet-Lite.zip">轻量版</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="note">
+    💡 <b>说明</b><br>
+    · 每个版本都是独立保存在 GitHub Releases 里的，上面按钮点开就能下载对应版本，不会互相覆盖。<br>
+    · 想要最新功能就用 <b>v2.1.1</b>；想回味早期简单的样子，可以下载 v1.0。<br>
+    · 如果某次下载很慢或点不动，多半是国内访问 GitHub 下载服务器不畅，可以稍后重试或换网络；也可回
+      <a href="./" style="color:#2b6ea8">下载页</a> 使用分片镜像。
+  </div>
+
+  <p class="back"><a href="./">← 返回下载页</a> · <a href="/">返回首页</a></p>
+  <footer>元宵企鹅桌宠 · 版本里程碑 🐧</footer>
+</div>
+</body>
+</html>
