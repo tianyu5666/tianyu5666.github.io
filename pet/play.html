@@ -42,14 +42,12 @@ body.electron #hint{display:none}
 #pet{
   position:fixed;left:0;top:0;width:96px;height:118px;
   cursor:grab;touch-action:none;z-index:10;
-  perspective:520px;
+  /* 平面模式：不使用 3D 透视（3D 会让层级排序失效、造成配件遮脸） */
   --body:#2c3138; --body2:#171b21; --body-hi:#4a525c;
   --belly:#ffffff; --facec:#ffffff;
   --cheek:#ff8fb0; --cheek-op:.35;
   --beak:#ffb340; --foot:#ffb340;
   --ex:0px; --ey:0px; --tilt:0deg;
-  --ry:0deg; --rx:0deg;
-  --gx:0px; --gy:0px;
   --grow:1;
 }
 #pet.dragging{cursor:grabbing}
@@ -60,13 +58,9 @@ body.electron #hint{display:none}
 .pet-inner{position:relative;width:100%;height:100%;transform-origin:50% 90%;transition:transform .3s ease}
 .stage3d{
   position:relative;width:100%;height:100%;
-  transform-style:preserve-3d;
-  transform:rotateY(var(--ry)) rotateX(var(--rx));
-  transition:transform .25s ease-out;
 }
 .penguin{
   position:relative;width:100%;height:100%;
-  transform-style:preserve-3d;
   transform:scale(var(--grow));
   animation:breathe 2.2s ease-in-out infinite;
 }
@@ -114,10 +108,9 @@ body.electron #hint{display:none}
     inset -7px -9px 16px rgba(0,0,0,.35),
     inset 5px 5px 12px rgba(255,255,255,.10),
     0 4px 10px rgba(20,40,60,.16);
-  transform:rotate(var(--tilt)) rotateX(var(--headx,0deg));
+  transform:rotate(var(--tilt));
   transform-origin:50% 86%;
   transition:transform .35s ease;
-  transform-style:preserve-3d;
 }
 
 .face{position:absolute;left:9px;top:12px;width:58px;height:52px;border-radius:50%;
@@ -151,15 +144,12 @@ body.electron #hint{display:none}
   box-shadow:0 2px 3px rgba(150,90,0,.3), inset 0 -1px 2px rgba(255,255,255,.5);
   transition:transform .15s}
 
-/* 立体高光：只打在肚子/身体上，且压在头下面一层，绝不会挡脸 */
-.gloss{position:absolute;left:30px;top:68px;width:30px;height:18px;border-radius:50%;
-  background:radial-gradient(circle at 42% 35%, rgba(255,255,255,.55), rgba(255,255,255,0) 70%);
-  transform:translate(var(--gx),var(--gy));pointer-events:none;z-index:4;filter:blur(2px);opacity:.85}
+/* 说明：原先这里有一块"动态高光"，在 3D 模式下会盖住脸，已彻底删除 */
 
 /* ============================================================
    🎒 造型配件
    ============================================================ */
-.scarf{display:none;position:absolute;left:13px;top:63px;width:70px;height:14px;z-index:6;
+.scarf{display:none;position:absolute;left:13px;top:68px;width:70px;height:14px;z-index:4;
   border-radius:8px;background:linear-gradient(180deg,var(--scarf1,#6aa8ff),var(--scarf2,#3f7fe0));
   box-shadow:inset 0 -2px 3px rgba(0,0,0,.16)}
 .scarf i{position:absolute;right:7px;top:9px;width:14px;height:26px;border-radius:6px;
@@ -335,11 +325,13 @@ body.electron #hint{display:none}
   45%{transform:translateY(-30px) rotate(5deg)}65%{transform:translateY(-16px) rotate(-4deg)}
   85%{transform:translateY(-4px) rotate(2deg)}100%{transform:translateY(0) rotate(0)}
 }
-.dbl-spin .stage3d{animation:dbl-spin 1.05s cubic-bezier(.35,.05,.3,1)}
-@keyframes dbl-spin{
-  0%{transform:rotateY(0deg) rotateX(0deg) scale(1)}
-  50%{transform:rotateY(180deg) rotateX(6deg) scale(1.06)}
-  100%{transform:rotateY(360deg) rotateX(0deg) scale(1)}
+.dbl-spin .stage3d{animation:spin-flat 1.05s cubic-bezier(.35,.05,.3,1)}
+/* 平面版转圈：整只企鹅原地转一圈（跳起来转的那种可爱感） */
+@keyframes spin-flat{
+  0%{transform:rotate(0deg) scale(1)}
+  45%{transform:rotate(170deg) scale(1.10)}
+  70%{transform:rotate(260deg) scale(1.06)}
+  100%{transform:rotate(360deg) scale(1)}
 }
 .dbl-spin .shadow{transform:scale(.8);opacity:.5}
 .dbl-doze .pet-inner{animation:dbl-doze 2.4s ease}
@@ -388,7 +380,7 @@ body.electron #hint{display:none}
 @keyframes look-around{0%,100%{transform:rotate(0)}22%{transform:rotate(-13deg)}55%{transform:rotate(11deg)}80%{transform:rotate(-4deg)}}
 .preening .wing-r{animation:preen .55s ease-in-out 4}
 @keyframes preen{0%,100%{transform:rotate(-7deg)}50%{transform:rotate(-52deg)}}
-.swapping .stage3d{animation:dbl-spin 1s ease}
+.swapping .stage3d{animation:spin-flat .9s ease}
 .levelup .penguin{animation:hop .3s ease-in-out 3}
 
 /* ============================================================
@@ -557,16 +549,16 @@ body.electron #hint{display:none}
               <div class="glasses"><i></i></div>
               <div class="grass"></div>
             </div>
+            <!-- 头上的配件挂在头里，跟着头一起倾斜，永远不会滑到脸上 -->
+            <div class="hat"></div>
+            <div class="flower-top"></div>
+            <div class="santa"><i></i></div>
+            <div class="crown"></div>
+            <div class="leaf"></div>
+            <div class="redflower"><i></i></div>
           </div>
-          <div class="gloss"></div>
           <div class="scarf"><i></i></div>
           <div class="bow"><i></i></div>
-          <div class="hat"></div>
-          <div class="flower-top"></div>
-          <div class="santa"><i></i></div>
-          <div class="crown"></div>
-          <div class="leaf"></div>
-          <div class="redflower"><i></i></div>
         </div>
       </div>
     </div>
@@ -1195,10 +1187,7 @@ function updateEyes(){
   pet.style.setProperty("--ey", clamp(dy / d * max, -max, max).toFixed(2) + "px");
   var tilt = mouse.dist < CONFIG.nearRadius * 1.7 ? clamp(dx / 70, -11, 11) : 0;
   pet.style.setProperty("--tilt", tilt.toFixed(1) + "deg");
-  pet.style.setProperty("--ry", clamp(dx / 26, -15, 15).toFixed(1) + "deg");
-  pet.style.setProperty("--rx", clamp(-dy / 34, -9, 9).toFixed(1) + "deg");
-  pet.style.setProperty("--gx", clamp(dx / 40, -4, 4).toFixed(1) + "px");
-  pet.style.setProperty("--gy", clamp(dy / 46, -3, 3).toFixed(1) + "px");
+  /* 已改为平面模式：不再做 3D 转向，也不再有会挡脸的高光 */
   pet.classList.toggle("near-mouse", mouse.dist < CONFIG.nearRadius);
 }
 function overHead(){
@@ -2029,7 +2018,13 @@ function init(){
   state.userName = LS("petUserName") || "";
   state.petName = LS("petPetName") || CONFIG.petName;
   /* 说话声音设置 */
-  VoiceCfg.mode = LS("petVoiceMode") || "animalese";
+  /* v2.2 起默认不说话；只在升级后的第一次运行做一次迁移，不覆盖你以后的手动选择 */
+  if (!LS("petVoiceMigrated22")){
+    LS("petVoiceMigrated22", "1");
+    var oldMode = LS("petVoiceMode");
+    if (!oldMode || oldMode === "animalese") LS("petVoiceMode", "off");
+  }
+  VoiceCfg.mode = LS("petVoiceMode") || "off";
   VoiceCfg.voice = LS("petVoiceName") || "Yaoyao";
   VoiceCfg.pitch = parseInt(LS("petVoicePitch") || "35", 10);
   VoiceCfg.rate = parseInt(LS("petVoiceRate") || "8", 10);
