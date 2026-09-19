@@ -151,9 +151,10 @@ body.electron #hint{display:none}
   box-shadow:0 2px 3px rgba(150,90,0,.3), inset 0 -1px 2px rgba(255,255,255,.5);
   transition:transform .15s}
 
-.gloss{position:absolute;left:26px;top:26px;width:34px;height:26px;border-radius:50%;
-  background:radial-gradient(circle at 40% 35%, rgba(255,255,255,.75), rgba(255,255,255,0) 70%);
-  transform:translate(var(--gx),var(--gy));pointer-events:none;z-index:6;filter:blur(1px)}
+/* 立体高光：只打在肚子/身体上，且压在头下面一层，绝不会挡脸 */
+.gloss{position:absolute;left:30px;top:68px;width:30px;height:18px;border-radius:50%;
+  background:radial-gradient(circle at 42% 35%, rgba(255,255,255,.55), rgba(255,255,255,0) 70%);
+  transform:translate(var(--gx),var(--gy));pointer-events:none;z-index:4;filter:blur(2px);opacity:.85}
 
 /* ============================================================
    🎒 造型配件
@@ -476,6 +477,10 @@ body.electron #hint{display:none}
   font-family:inherit;text-align:center;
 }
 .panel input:focus{border-color:#ff8fb0;box-shadow:0 0 0 3px rgba(255,143,176,.25)}
+.panel select{width:100%;margin-top:5px;padding:9px 11px;border-radius:11px;font-size:13.5px;
+  border:1.5px solid #ffc9dd;background:#fff;color:#5a3a48;outline:none;font-family:inherit}
+.panel input[type=range]{width:100%;margin-top:6px;accent-color:#e91e63}
+.panel .p-note{font-size:12px;color:#8a6b78;text-align:left;margin-top:6px;line-height:1.5}
 .panel .p-check{display:flex;align-items:center;gap:8px;margin-top:12px;font-weight:700;color:#6b4a58}
 .panel .p-check input{width:18px;height:18px}
 .panel .p-row{margin-top:16px;display:flex;gap:10px;justify-content:center}
@@ -579,8 +584,9 @@ body.electron #hint{display:none}
   <button class="item ring2" data-act="sleep">😴<span class="label">睡觉 / 起床</span></button>
   <button class="item ring2" data-act="name">✏️<span class="label">改称呼</span></button>
   <button class="item ring2" data-act="clock">⏰<span class="label">时钟 / 倒计时</span></button>
-  <button class="item ring2" data-act="sound">🔊<span class="label">声音大小</span></button>
-  <button class="item ring2" data-act="voice">🗣<span class="label">语音说话</span></button>
+  <button class="item ring2" data-act="sound">🔊<span class="label">叫声大小</span></button>
+  <button class="item ring2" data-act="voicebox">🗣<span class="label">说话声音</span></button>
+  <button class="item ring2" data-act="petname">🏷<span class="label">给它起名字</span></button>
   <button class="item ring2" data-act="bond">💗<span class="label">亲密度</span></button>
   <button class="item ring2" data-act="quit" id="quitItem" style="display:none">🚪<span class="label">退出桌宠</span></button>
 </div>
@@ -602,12 +608,52 @@ body.electron #hint{display:none}
   <input id="goalLabel" type="text" maxlength="8" placeholder="出发">
   <label>倒计时目标日期</label>
   <input id="goalDate" type="date">
-  <div class="p-check"><input type="checkbox" id="showTime"><label for="showTime" style="margin:0">显示当前时间</label></div>
-  <div class="p-check"><input type="checkbox" id="showBond"><label for="showBond" style="margin:0">显示亲密度与陪伴时长</label></div>
-  <div class="p-check"><input type="checkbox" id="showBadge"><label for="showBadge" style="margin:0">显示信息牌</label></div>
+  <label>信息牌什么时候出现</label>
+  <select id="badgeMode">
+    <option value="2h">每 2 小时出现一次（推荐 · 安静）</option>
+    <option value="1h">每 1 小时出现一次</option>
+    <option value="always">一直挂在旁边</option>
+    <option value="off">不显示</option>
+  </select>
+  <div class="p-check"><input type="checkbox" id="showTime"><label for="showTime" style="margin:0">出现时显示当前时间</label></div>
+  <div class="p-check"><input type="checkbox" id="showBond"><label for="showBond" style="margin:0">出现时显示亲密度与陪伴时长</label></div>
   <div class="p-row">
     <button id="clockOk" class="ok" type="button">保存</button>
     <button id="clockCancel" class="cancel" type="button">取消</button>
+  </div>
+</div>
+
+<!-- 🗣 说话声音设置 -->
+<div class="panel" id="voiceBox">
+  <div class="p-title">它说话的声音</div>
+  <label>说话方式</label>
+  <select id="voiceMode">
+    <option value="animalese">🎵 卡通小奶音（即时、最可爱）</option>
+    <option value="tts">🗣 童声真人语音（念出中文）</option>
+    <option value="off">🔇 不说话（只出叫声）</option>
+  </select>
+  <label>真人语音用哪个声音</label>
+  <select id="voicePick"></select>
+  <label>音高（越大越奶）：<span id="pitchVal">35</span>%</label>
+  <input type="range" id="pitchRange" min="0" max="70" step="5" value="35">
+  <label>语速（越大越快）：<span id="rateVal">8</span>%</label>
+  <input type="range" id="rateRange" min="-20" max="30" step="2" value="8">
+  <div class="p-note">💡 卡通小奶音是现场合成的"咿咿呀呀"（像游戏角色），完全不像机器人；童声真人语音会念出中文。</div>
+  <div class="p-row">
+    <button id="voiceTest" class="ok" type="button">试听</button>
+    <button id="voiceSave" class="ok" type="button">保存</button>
+    <button id="voiceCancel" class="cancel" type="button">取消</button>
+  </div>
+</div>
+
+<!-- 🏷 给企鹅起名字 -->
+<div class="panel" id="petNameBox">
+  <div class="p-title">给它起个名字吧</div>
+  <input id="petNameInput" type="text" maxlength="8" placeholder="例如：元宵、小汤圆、团子">
+  <div class="p-note">起好名字后，它会用这个名字称呼自己，你叫它也会更像那么回事～</div>
+  <div class="p-row">
+    <button id="petNameOk" class="ok" type="button">就叫这个</button>
+    <button id="petNameCancel" class="cancel" type="button">取消</button>
   </div>
 </div>
 
@@ -788,24 +834,106 @@ var Sfx = (function(){
 })();
 
 /* ============================================================
-   🗣 语音说话（系统语音念台词）
+   🗣 说话系统（三种方式，任选）
+   🎵 animalese  卡通小奶音：Web Audio 现场合成的"咿咿呀呀"，像游戏角色，最奶
+   🗣 tts        童声真人语音：调用 Windows 童声「瑶瑶」念中文（可调音高/语速）
+   🔇 off        不说话，只保留啾啾叫声
    ============================================================ */
+var VoiceCfg = { mode: "animalese", voice: "Yaoyao", pitch: 35, rate: 8 };
+var ipcVoice = null;
+try { if (/Electron/i.test(navigator.userAgent)) ipcVoice = require("electron").ipcRenderer; } catch(e){ ipcVoice = null; }
+
+/* —— 卡通小奶音：每个字一个小音块（动森那种"咿咿呀呀"）—— */
+var Animalese = (function(){
+  var ctx = null;
+  function ready(){
+    try{
+      if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+      if (ctx.state === "suspended") ctx.resume();
+      return ctx;
+    }catch(e){ return null; }
+  }
+  /* 单个"咿呀"音块：正弦为主 + 轻泛音 + 低通柔化 = 软糯清脆 */
+  function blip(c, t0, freq, dur, vol){
+    var o1 = c.createOscillator(), o2 = c.createOscillator();
+    var g = c.createGain(), g2 = c.createGain();
+    var bp = c.createBiquadFilter(), lp = c.createBiquadFilter();
+    o1.type = "sine"; o2.type = "triangle";
+    o1.frequency.setValueAtTime(freq, t0);
+    o1.frequency.linearRampToValueAtTime(freq * 1.10, t0 + dur);   /* 尾音轻轻上扬 */
+    o2.frequency.setValueAtTime(freq * 1.5, t0);
+    o2.frequency.linearRampToValueAtTime(freq * 1.6, t0 + dur);
+    bp.type = "bandpass"; bp.frequency.value = 850 + Math.random() * 450; bp.Q.value = 1.0;
+    lp.type = "lowpass"; lp.frequency.value = 3400;                 /* 削掉刺耳高频 → 更软 */
+    g2.gain.value = 0.22;                                           /* 泛音很轻 → 不吵 */
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.linearRampToValueAtTime(vol, t0 + 0.03);                 /* 软起音 */
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);          /* 自然收尾 */
+    o1.connect(bp); o2.connect(g2); g2.connect(bp);
+    bp.connect(lp); lp.connect(g); g.connect(c.destination);
+    o1.start(t0); o1.stop(t0 + dur + 0.02);
+    o2.start(t0); o2.stop(t0 + dur + 0.02);
+  }
+  return {
+    speak: function(text, vol){
+      var c = ready(); if (!c) return 0;
+      var raw = String(text).replace(/<[^>]+>/g, "").slice(0, 90);
+      if (!raw) return 0;
+      /* 标点处停一下，念起来更像说话 */
+      var gap = { "，": 0.10, "、": 0.08, "。": 0.22, "！": 0.22, "？": 0.22,
+                  "~": 0.06, "～": 0.06, "…": 0.20, "；": 0.14, "：": 0.12 };
+      var t = c.currentTime + 0.02, count = 0;
+      var base = 480 + Math.random() * 40;       /* 每句音色略有不同，避免机械感 */
+      for (var i = 0; i < raw.length && count < 46; i++){
+        var ch = raw.charAt(i);
+        if (/\s/.test(ch)){ t += 0.03; continue; }
+        if (gap[ch] !== undefined){ t += gap[ch]; continue; }
+        if (!/[\u4e00-\u9fa5a-zA-Z0-9]/.test(ch)) continue;
+        var code = ch.charCodeAt(0);
+        var freq = base + (code % 8) * 22 + (i % 3) * 9 + Math.random() * 14;
+        var dur = 0.072 + (code % 3) * 0.012;
+        blip(c, t, freq, dur, (vol || 0.13));    /* 音量偏轻，奶而不吵 */
+        t += dur * 0.9;
+        count++;
+      }
+      return (t - c.currentTime) * 1000;
+    }
+  };
+})();
+
+/* —— 说话总入口 —— */
 var Speech = (function(){
-  var on = true, ok = ("speechSynthesis" in window);
-  function speak(text, rate, pitch){
-    if (!on || !ok || !text) return;
+  var ok = ("speechSynthesis" in window);
+  function stopAll(){
+    try { if (ok) window.speechSynthesis.cancel(); } catch(e){}
+    if (ipcVoice) { try { ipcVoice.send("pet-speak-stop"); } catch(e){} }
+  }
+  function speak(text){
+    var t = String(text || "").replace(/<[^>]+>/g, "").trim();
+    if (!t || VoiceCfg.mode === "off") return;
+    if (VoiceCfg.mode === "animalese"){ stopAll(); Animalese.speak(t); return; }
+    /* 童声真人语音：优先走 Electron → Windows 童声 */
+    if (ipcVoice){
+      try { ipcVoice.send("pet-speak", { text: t, voice: VoiceCfg.voice, pitch: VoiceCfg.pitch, rate: VoiceCfg.rate }); return; } catch(e){}
+    }
+    if (!ok) return;
     try{
       window.speechSynthesis.cancel();
-      var u = new SpeechSynthesisUtterance(String(text).replace(/[～~]/g, "，"));
-      u.lang = "zh-CN"; u.rate = rate || 1.02; u.pitch = pitch || 1.25; u.volume = 1;
+      var u = new SpeechSynthesisUtterance(t.replace(/[～~]/g, "，"));
+      u.lang = "zh-CN";
+      u.pitch = Math.min(2, 1 + VoiceCfg.pitch / 50);   /* 35 → 1.7 明显更奶 */
+      u.rate = Math.max(0.6, 1 + VoiceCfg.rate / 40);
       window.speechSynthesis.speak(u);
     }catch(e){}
   }
   return {
     speak: speak,
-    toggle: function(){ on = !on; if (!on && ok){ try{ window.speechSynthesis.cancel(); }catch(e){} } return on; },
-    isOn: function(){ return on; },
-    available: ok
+    stop: stopAll,
+    setMode: function(m){ VoiceCfg.mode = m; if (m === "off") stopAll(); },
+    getMode: function(){ return VoiceCfg.mode; },
+    toggle: function(){ VoiceCfg.mode = (VoiceCfg.mode === "off") ? "animalese" : "off"; if (VoiceCfg.mode === "off") stopAll(); return VoiceCfg.mode !== "off"; },
+    isOn: function(){ return VoiceCfg.mode !== "off"; },
+    available: true
   };
 })();
 
@@ -827,6 +955,8 @@ var quitItem = document.getElementById("quitItem");
 var nameBox = document.getElementById("nameBox");
 var nameInput = document.getElementById("nameInput");
 var clockBox = document.getElementById("clockBox");
+var voiceBox = document.getElementById("voiceBox");
+var petNameBox = document.getElementById("petNameBox");
 if (isElectron) quitItem.style.display = "flex";
 
 var state = {
@@ -843,6 +973,7 @@ var state = {
   skinIndex: 0,
   outfitIndex: 0,
   userName: "",
+  petName: "元宵",
   bond: 12,
   full: 0,
   grow: 1,
@@ -851,6 +982,8 @@ var state = {
   showTime: true,
   showBond: true,
   showBadge: true,
+  badgeMode: "2h",        /* 信息牌出现频率：always / 1h / 2h / off */
+  badgeShownUntil: 0,
   goalLabel: "出发",
   goalDate: ""
 };
@@ -873,7 +1006,7 @@ function LS(k, v){
 }
 function fill(text){
   var n = state.userName || "你";
-  return String(text).split("{name}").join(n).split("{pet}").join(CONFIG.petName);
+  return String(text).split("{name}").join(n).split("{pet}").join(state.petName || CONFIG.petName);
 }
 
 /* ============================================================
@@ -1009,8 +1142,35 @@ function updateBadge(){
   } else {
     bEl.style.display = "none"; sep.style.display = "none";
   }
-  pet.classList.toggle("badge-on", !!(state.showBadge && (state.showTime || state.showBond || g)));
+  var visible = state.showBadge && (state.showTime || state.showBond || !!g) && badgeVisibleNow();
+  pet.classList.toggle("badge-on", visible);
 }
+
+/* —— 信息牌出现节奏：默认每 2 小时露一次脸，每次亮 1 分钟 —— */
+function badgeVisibleNow(){
+  if (!state.showBadge) return false;
+  if (state.badgeMode === "off") return false;
+  if (state.badgeMode === "always") return true;
+  return Date.now() < state.badgeShownUntil;
+}
+function badgeIntervalMs(){
+  if (state.badgeMode === "1h") return 3600000;
+  if (state.badgeMode === "2h") return 7200000;
+  return 0;
+}
+function maybeShowBadge(){
+  var iv = badgeIntervalMs();
+  if (!iv) return;
+  var now = Date.now();
+  var last = parseInt(LS("petBadgeLast") || "0", 10) || 0;
+  if (now - last >= iv){
+    state.badgeShownUntil = now + 60000;      /* 亮 1 分钟 */
+    LS("petBadgeLast", String(now));
+    updateBadge();
+    if (!state.sleeping) Sfx.idleChirp();
+  }
+}
+setInterval(maybeShowBadge, 30000);
 function tickCompanion(){
   var today = new Date().toISOString().slice(0, 10);
   var rec = { date: today, sec: 0 };
@@ -1037,8 +1197,8 @@ function updateEyes(){
   pet.style.setProperty("--tilt", tilt.toFixed(1) + "deg");
   pet.style.setProperty("--ry", clamp(dx / 26, -15, 15).toFixed(1) + "deg");
   pet.style.setProperty("--rx", clamp(-dy / 34, -9, 9).toFixed(1) + "deg");
-  pet.style.setProperty("--gx", clamp(dx / 22, -7, 7).toFixed(1) + "px");
-  pet.style.setProperty("--gy", clamp(dy / 26, -6, 6).toFixed(1) + "px");
+  pet.style.setProperty("--gx", clamp(dx / 40, -4, 4).toFixed(1) + "px");
+  pet.style.setProperty("--gy", clamp(dy / 46, -3, 3).toFixed(1) + "px");
   pet.classList.toggle("near-mouse", mouse.dist < CONFIG.nearRadius);
 }
 function overHead(){
@@ -1102,7 +1262,8 @@ function isOverInteractive(x, y){
     var mx = parseFloat(menu.style.left || "0"), my = parseFloat(menu.style.top || "0");
     if (Math.sqrt((x - mx) * (x - mx) + (y - my) * (y - my)) < menuRadius() + 60) return true;
   }
-  if (nameBox.classList.contains("show") || clockBox.classList.contains("show")) return true;
+  if (nameBox.classList.contains("show") || clockBox.classList.contains("show") ||
+      voiceBox.classList.contains("show") || petNameBox.classList.contains("show")) return true;
   return false;
 }
 window.addEventListener("pointermove", function(e){
@@ -1295,8 +1456,9 @@ menu.addEventListener("click", function(e){
   if (act === "sleep")  actionSleep();
   if (act === "name")   openNameBox();
   if (act === "clock")  openClockBox();
-  if (act === "sound")  cycleSound();
-  if (act === "voice")  toggleVoice();
+  if (act === "sound")    cycleSound();
+  if (act === "voicebox") openVoiceBox();
+  if (act === "petname")  openPetNameBox();
   if (act === "bond")   actionBond();
   if (act === "quit" && ipc) ipc.send("pet-quit");
 });
@@ -1304,7 +1466,12 @@ menu.addEventListener("click", function(e){
 /* ============================================================
    🖱 面板
    ============================================================ */
-function closePanels(){ nameBox.classList.remove("show"); clockBox.classList.remove("show"); }
+function closePanels(){
+  nameBox.classList.remove("show");
+  clockBox.classList.remove("show");
+  voiceBox.classList.remove("show");
+  petNameBox.classList.remove("show");
+}
 function openNameBox(){
   nameInput.value = state.userName || "";
   closePanels();
@@ -1335,7 +1502,7 @@ function openClockBox(){
   $("goalDate").value = state.goalDate || "";
   $("showTime").checked = !!state.showTime;
   $("showBond").checked = !!state.showBond;
-  $("showBadge").checked = !!state.showBadge;
+  $("badgeMode").value = state.badgeMode || "2h";
   closePanels();
   clockBox.classList.add("show");
   touchInteraction(false);
@@ -1345,18 +1512,130 @@ $("clockOk").addEventListener("click", function(){
   state.goalDate = $("goalDate").value || "";
   state.showTime = $("showTime").checked;
   state.showBond = $("showBond").checked;
-  state.showBadge = $("showBadge").checked;
+  state.badgeMode = $("badgeMode").value;
+  state.showBadge = (state.badgeMode !== "off");
+  state.badgeShownUntil = Date.now() + 60000;   /* 保存后先亮 1 分钟给你看效果 */
   LS("petGoalLabel", state.goalLabel);
   LS("petGoalDate", state.goalDate);
+  LS("petBadgeMode", state.badgeMode);
   LS("petShowTime", state.showTime ? "1" : "0");
   LS("petShowBond", state.showBond ? "1" : "0");
   LS("petShowBadge", state.showBadge ? "1" : "0");
+  LS("petBadgeLast", String(Date.now()));
   closePanels();
   updateBadge();
   say(state.goalDate ? ("记住啦！我会帮你数着" + state.goalLabel + "的日子~") : "信息牌设置好啦~", 2600);
   addBond(1);
 });
 $("clockCancel").addEventListener("click", closePanels);
+
+/* ============================================================
+   🗣 说话声音设置面板
+   ============================================================ */
+var voiceBackup = null;
+function loadVoiceList(){
+  var sel = $("voicePick");
+  if (sel.options.length > 0) return;
+  function fill(names){
+    sel.innerHTML = "";
+    names.forEach(function(it){
+      var o = document.createElement("option");
+      o.value = it.voice; o.textContent = it.label;
+      sel.appendChild(o);
+    });
+    sel.value = VoiceCfg.voice;
+  }
+  function label(n){
+    var short = String(n).replace(/^Microsoft\s*/, "");
+    if (/Yaoyao/i.test(short))   return short + "（童声 · 推荐）";
+    if (/Huihui/i.test(short))   return short + "（女声）";
+    if (/Kangkang/i.test(short)) return short + "（男声）";
+    return short;
+  }
+  if (ipcVoice && ipcVoice.invoke){
+    ipcVoice.invoke("pet-voice-list").then(function(list){
+      var zh = (list || []).filter(function(v){ return /zh/i.test(v.lang || ""); });
+      if (!zh.length) zh = [{ name: "Microsoft Yaoyao" }, { name: "Microsoft Huihui" }];
+      fill(zh.map(function(v){ return { voice: String(v.name).replace(/^Microsoft\s*/, ""), label: label(v.name) }; }));
+    }).catch(function(){
+      fill([{ voice: "Yaoyao", label: "Yaoyao（童声 · 推荐）" }, { voice: "Huihui", label: "Huihui（女声）" }]);
+    });
+  } else {
+    fill([{ voice: "Yaoyao", label: "Yaoyao（童声 · 推荐）" },
+          { voice: "Huihui", label: "Huihui（女声）" },
+          { voice: "Kangkang", label: "Kangkang（男声）" }]);
+  }
+}
+function openVoiceBox(){
+  voiceBackup = { mode: VoiceCfg.mode, voice: VoiceCfg.voice, pitch: VoiceCfg.pitch, rate: VoiceCfg.rate };
+  $("voiceMode").value = VoiceCfg.mode;
+  $("pitchRange").value = VoiceCfg.pitch; $("pitchVal").textContent = VoiceCfg.pitch;
+  $("rateRange").value = VoiceCfg.rate;   $("rateVal").textContent = VoiceCfg.rate;
+  closePanels();
+  voiceBox.classList.add("show");
+  loadVoiceList();
+  touchInteraction(false);
+}
+function applyVoiceUI(){
+  VoiceCfg.mode = $("voiceMode").value;
+  var pick = $("voicePick").value; if (pick) VoiceCfg.voice = pick;
+  VoiceCfg.pitch = parseInt($("pitchRange").value, 10);
+  VoiceCfg.rate = parseInt($("rateRange").value, 10);
+}
+$("pitchRange").addEventListener("input", function(){ $("pitchVal").textContent = this.value; });
+$("rateRange").addEventListener("input", function(){ $("rateVal").textContent = this.value; });
+$("voiceMode").addEventListener("change", function(){
+  applyVoiceUI();
+  say(this.value === "animalese" ? "试试这个：咿咿呀呀～" : this.value === "tts" ? "我念给你听哦～" : "那我安静一点～", 2600);
+});
+$("voiceTest").addEventListener("click", function(){
+  applyVoiceUI();
+  say("你好呀，我是" + (state.petName || CONFIG.petName) + "，今天也要开开心心的～", 3200, false, true);
+});
+$("voiceSave").addEventListener("click", function(){
+  applyVoiceUI();
+  LS("petVoiceMode", VoiceCfg.mode);
+  LS("petVoiceName", VoiceCfg.voice);
+  LS("petVoicePitch", String(VoiceCfg.pitch));
+  LS("petVoiceRate", String(VoiceCfg.rate));
+  closePanels();
+  say("声音设置好啦～", 2200, false, true);
+  addBond(1);
+});
+$("voiceCancel").addEventListener("click", function(){
+  if (voiceBackup){
+    VoiceCfg.mode = voiceBackup.mode; VoiceCfg.voice = voiceBackup.voice;
+    VoiceCfg.pitch = voiceBackup.pitch; VoiceCfg.rate = voiceBackup.rate;
+  }
+  closePanels();
+});
+
+/* ============================================================
+   🏷 给它起名字
+   ============================================================ */
+function openPetNameBox(){
+  $("petNameInput").value = state.petName || CONFIG.petName;
+  closePanels();
+  petNameBox.classList.add("show");
+  setTimeout(function(){ try { $("petNameInput").focus(); } catch(e){} }, 120);
+  touchInteraction(false);
+}
+function savePetName(){
+  var v = ($("petNameInput").value || "").trim().slice(0, 8) || CONFIG.petName;
+  state.petName = v;
+  LS("petPetName", v);
+  closePanels();
+  say("好耶！以后我就叫「" + v + "」啦～", 3000, false, true);
+  hearts(petCenter().x, state.y + 4, 5);
+  addTmp("levelup", 900);
+  addBond(2);
+}
+$("petNameOk").addEventListener("click", savePetName);
+$("petNameCancel").addEventListener("click", closePanels);
+$("petNameInput").addEventListener("keydown", function(e){
+  if (e.key === "Enter") savePetName();
+  if (e.key === "Escape") closePanels();
+});
 
 /* ============================================================
    🎮 互动动作
@@ -1748,6 +2027,12 @@ function init(){
   var savedSkin = parseInt(LS("petSkinIndex") || "0", 10) || 0;
   var savedOutfit = parseInt(LS("petOutfitIndex") || "0", 10) || 0;
   state.userName = LS("petUserName") || "";
+  state.petName = LS("petPetName") || CONFIG.petName;
+  /* 说话声音设置 */
+  VoiceCfg.mode = LS("petVoiceMode") || "animalese";
+  VoiceCfg.voice = LS("petVoiceName") || "Yaoyao";
+  VoiceCfg.pitch = parseInt(LS("petVoicePitch") || "35", 10);
+  VoiceCfg.rate = parseInt(LS("petVoiceRate") || "8", 10);
   state.bond = parseFloat(LS("petBond") || "12") || 12;
   state.full = parseInt(LS("petFull") || "0", 10) || 0;
   state.grow = 1 + state.full * 0.022;
@@ -1756,8 +2041,11 @@ function init(){
   state.showTime = LS("petShowTime") !== "0";
   state.showBond = LS("petShowBond") !== "0";
   state.showBadge = LS("petShowBadge") !== "0";
+  state.badgeMode = LS("petBadgeMode") || "2h";
+  /* 刚打开先亮 1 分钟让你看到，之后按设置（默认每 2 小时）偶尔出现 */
+  state.badgeShownUntil = Date.now() + 60000;
+  LS("petBadgeLast", String(Date.now()));
   Sfx.setLevel(parseInt(LS("petSoundLevel") || "2", 10) || 2);
-  if (LS("petVoice") === "0") Speech.toggle();
 
   relayout();
   state.x = clamp(window.innerWidth * 0.62, layout.xMin, layout.xMax);
