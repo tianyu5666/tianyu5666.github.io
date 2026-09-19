@@ -3,134 +3,61 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>企鹅桌宠 🐧</title>
+<title>元宵 · 企鹅桌宠 🐧</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%90%A7%3C/text%3E%3C/svg%3E">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{
   font-family:"PingFang SC","Microsoft YaHei","Hiragino Sans GB",sans-serif;
-  min-height:100vh;padding:48px 20px 70px;
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  padding:48px 20px;color:#2f4858;text-align:center;
   background:linear-gradient(180deg,#cfe9ff 0%,#e9f5ff 45%,#eefaf1 72%,#dcf2e4 100%);
-  color:#2f4858;-webkit-font-smoothing:antialiased;
+  -webkit-font-smoothing:antialiased;
 }
-.wrap{max-width:900px;margin:0 auto}
+.wrap{max-width:520px;width:100%}
 h1{
-  text-align:center;font-size:clamp(30px,6vw,46px);letter-spacing:.06em;
-  color:#1f3b4d;text-shadow:0 2px 12px rgba(255,255,255,.9);
+  font-size:clamp(34px,8vw,52px);letter-spacing:.06em;color:#1f3b4d;
+  text-shadow:0 2px 14px rgba(255,255,255,.9);
 }
-.sub{text-align:center;margin-top:12px;font-size:clamp(13px,2.6vw,16px);color:#5b7c8d;line-height:1.7}
-.grid{display:grid;gap:18px;margin-top:38px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
-.card{
-  background:rgba(255,255,255,.86);border-radius:20px;padding:24px 22px;
-  box-shadow:0 10px 30px rgba(70,120,140,.16),inset 0 0 0 1px rgba(255,255,255,.9);
-  display:flex;flex-direction:column;
-}
-.card h2{font-size:17px;color:#1f3b4d;letter-spacing:.03em}
-.card p{margin-top:10px;font-size:13.5px;line-height:1.75;color:#5b7c8d;flex:1}
+.sub{margin-top:14px;font-size:clamp(13.5px,3vw,16px);color:#5b7c8d;letter-spacing:.08em}
+.btns{margin-top:38px;display:flex;flex-direction:column;gap:12px}
 .btn{
-  display:inline-block;margin-top:18px;padding:12px 20px;border-radius:999px;text-align:center;
-  text-decoration:none;font-weight:700;font-size:14.5px;letter-spacing:.05em;
+  display:block;padding:15px 20px;border-radius:999px;text-decoration:none;
+  font-weight:700;font-size:15.5px;letter-spacing:.04em;
   background:#fff;color:#2b6ea8;border:1.5px solid #b9dcf5;
-  transition:transform .2s ease,box-shadow .2s ease;
+  transition:transform .18s ease,box-shadow .18s ease;
 }
-.btn:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(80,140,190,.25)}
+.btn:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(80,140,190,.22)}
 .btn.main{
   background:linear-gradient(135deg,#6fb3ef,#2b7fd4);color:#fff;border:none;
-  box-shadow:0 10px 24px rgba(43,127,212,.4);
+  box-shadow:0 10px 26px rgba(43,127,212,.38);font-size:16.5px;
 }
-.btn.main:hover{box-shadow:0 14px 30px rgba(43,127,212,.5)}
-.sec{margin-top:46px;font-size:19px;color:#1f3b4d;letter-spacing:.05em}
-.rules{
-  margin-top:16px;background:rgba(255,255,255,.72);border-radius:18px;padding:22px 24px;
-  box-shadow:inset 0 0 0 1px rgba(255,255,255,.9);
-}
-.rules li{list-style:none;font-size:13.5px;line-height:2.05;color:#48697b}
-.rules li b{color:#2b6ea8}
-.foot{margin-top:34px;text-align:center;font-size:12.5px;color:#7b95a4;line-height:1.9}
-.back{display:block;text-align:center;margin-top:26px;font-size:13px;color:#5b7c8d}
-.back a{color:#2b6ea8;text-decoration:none}
+.btn.main:hover{box-shadow:0 14px 32px rgba(43,127,212,.5)}
+.btn.ghost{background:transparent;border-color:#cfe3f3;color:#5b7c8d;font-weight:600;font-size:14px}
+.tip{margin-top:22px;font-size:12.5px;color:#7b95a4;line-height:1.9}
+.more{margin-top:34px;font-size:13px}
+.more a{color:#7b95a4;text-decoration:none;border-bottom:1px dashed #c3d6e4;padding-bottom:2px}
+.more a:hover{color:#2b6ea8;border-color:#2b6ea8}
 </style>
 </head>
 <body>
-<div class="wrap">
+  <div class="wrap">
+    <h1>🐧 元宵</h1>
+    <p class="sub">一只会陪你发呆的小企鹅</p>
 
-  <h1>🐧 企鹅桌宠</h1>
-  <p class="sub">一只会歪头看你、会自己散步、还会提醒你喝水的小企鹅<br>纯 CSS 绘制 · 无任何外部依赖</p>
-
-  <div class="grid">
-    <div class="card">
-      <h2>🌐 在线试玩</h2>
-      <p>不用下载，点开立刻玩，手机也支持。鼠标靠近它会歪头看你，单击会扑腾，双击会撒花，右键有互动菜单。</p>
-      <a class="btn" href="play.html">立即试玩 →</a>
+    <div class="btns">
+      <a class="btn main" href="https://github.com/tianyu5666/tianyu5666.github.io/releases/latest/download/PenguinPet-Setup-2.2.0.exe">下载 Windows 版</a>
+      <a class="btn" href="play.html">在线试玩（不用下载）</a>
+      <a class="btn ghost" href="https://github.com/tianyu5666/tianyu5666.github.io/releases/latest/download/PenguinPet-Windows-x64.zip">免安装绿色版</a>
+      <a class="btn ghost" href="https://github.com/tianyu5666/tianyu5666.github.io/releases/latest/download/PenguinPet-Lite.zip">轻量版（约 26KB）</a>
     </div>
 
-    <div class="card">
-      <h2>💻 桌面悬浮版（推荐）</h2>
-      <p><b>元宵 · 企鹅桌宠 v2.0</b>：圆滚滚的 3D 立体感（跟着鼠标转身、高光会动）、双击随机盲盒动作、<b>投喂小鱼干会变圆</b>、摸头杀、<b>4 套造型</b>、作息生物钟（深夜会自己睡）、奶萌音效 + 会说话、头顶时钟与倒计时、<b>亲密度养成</b>。Windows 10/11 64 位。</p>
-      <a class="btn main" href="https://github.com/tianyu5666/tianyu5666.github.io/releases/latest/download/PenguinPet-Setup-2.0.0.exe">下载安装版（推荐）</a>
-      <a class="btn" style="margin-top:10px" href="https://github.com/tianyu5666/tianyu5666.github.io/releases/latest/download/PenguinPet-Windows-x64.zip">下载免安装绿色版</a>
-    </div>
+    <p class="tip">
+      Windows 10 / 11 · 双击安装，装完就能看到它<br>
+      首次运行若提示「Windows 已保护你的电脑」→ 点「更多信息」→「仍要运行」
+    </p>
 
-    <div class="card">
-      <h2>🪶 轻量版（约 10KB）</h2>
-      <p>零安装：解压后双击 bat，用系统自带浏览器开一个小窗口。适合只想尝鲜、或网络较慢的朋友。</p>
-      <a class="btn" href="https://github.com/tianyu5666/tianyu5666.github.io/releases/latest/download/PenguinPet-Lite.zip">下载轻量版</a>
-    </div>
+    <p class="more"><a href="versions.html">📜 历史版本</a></p>
   </div>
-
-  <h2 class="sec">玩法说明</h2>
-  <ul class="rules">
-    <li>🖱️ <b>鼠标靠近</b>：眼睛跟着你转、歪头、腮红加深，还会主动凑过来</li>
-    <li>👆 <b>单击</b>：缩一下 → 开心扑腾翅膀 → 冒"啾~"</li>
-    <li>✨ <b>双击</b>：跳起来转一圈 + 撒花，然后害羞地低头</li>
-    <li>✋ <b>拖拽</b>：按住可以拖到任何地方，松手会落回地面站稳</li>
-    <li>🎨 <b>右键 → 换皮肤</b>：<b>11 款</b>，且颜色真的会变 ✨<br>
-      经典黑白 · 粉粉腮红 · 蓝色围巾 · 樱花蝴蝶结 · 极光蓝围巾 · 暖阳小圆帽 · <b>玫瑰粉</b> · <b>蜜桃粉</b> · <b>棉花糖粉紫</b> · 🎄<b>圣诞限定</b>（圣诞帽＋绿围巾，撒雪花）· 🎆<b>新年限定</b>（金皇冠＋金围巾，撒礼花）</li>
-    <li>✏️ <b>右键 → 改称呼</b>：输入名字或昵称，企鹅就会在台词里叫你，例如「小瑜，今天也要加油鸭~」，设置会被记住</li>
-    <li>💬 <b>碎碎念</b>：<b>32 句</b>温柔体贴的台词，随心情变化（开心 / 无聊 / 困倦 / 通用各有专属台词）</li>
-    <li>🕒 <b>不理它</b>：会自己散步、东张西望、坐下休息、整理羽毛；2 分钟变无聊，5 分钟开始打瞌睡；每 1 小时提醒你站起来活动一下</li>
-  </ul>
-
-  <h2 class="sec">🖱 解压后怎么用？（绿色版三步走）</h2>
-  <ul class="rules">
-    <li>📜 <b>想看看一路怎么变强的？</b> <a href="versions.html" style="color:#2b6ea8;font-weight:700">打开「版本里程碑」→</a>
-      v1.0 到现在的每个版本都保留着，任意版本都能单独下载（当纪念也好 🐧）</li>
-    <li>① 把 <code>PenguinPet</code> 文件夹放到一个固定位置（例如 <code>D:\PenguinPet</code>，以后别移动它）</li>
-    <li>② 双击文件夹里的 <b>1-Create-Desktop-Shortcut.bat</b> → 桌面立刻出现带企鹅图标的「企鹅桌宠」，以后双击它就启动 ✅</li>
-    <li>③ 想开机自动出现（可选）：双击 <b>2-Enable-AutoStart.bat</b>；不想要了双击 <b>3-Disable-AutoStart.bat</b></li>
-    <li>也可以什么都不设，直接双击 <b>PenguinPet.exe</b> 就能用；第一次运行若提示「Windows 已保护你的电脑」→ 点「更多信息」→「仍要运行」</li>
-    <li>💡 用<b>安装版</b>的话更省事：安装时会自动创建桌面与开始菜单快捷方式，不用手动设</li>
-  </ul>
-
-  <h2 class="sec">🐢 国内网络下载（分片镜像 · 不经过 GitHub 下载服务器）</h2>
-  <ul class="rules">
-    <li>💡 <b>如果点上面的下载按钮没反应/失败</b>（国内访问 GitHub 下载服务器常被阻断），就走这里——文件放在本站，国内可正常下载。</li>
-    <li>① 把 4 个分片全部下载（每片 34.7MB，缺一个都合并不了）：<br>
-      <a href="dl/PenguinPet-Windows-x64.zip.001" style="color:#2b6ea8;font-weight:700">…zip.001</a> ·
-      <a href="dl/PenguinPet-Windows-x64.zip.002" style="color:#2b6ea8;font-weight:700">…zip.002</a> ·
-      <a href="dl/PenguinPet-Windows-x64.zip.003" style="color:#2b6ea8;font-weight:700">…zip.003</a> ·
-      <a href="dl/PenguinPet-Windows-x64.zip.004" style="color:#2b6ea8;font-weight:700">…zip.004</a></li>
-    <li>② 下载合并脚本：<a href="dl/merge-and-unzip.bat" style="color:#2b6ea8;font-weight:700">merge-and-unzip.bat</a></li>
-    <li>③ 把 <b>5 个文件</b>放进同一个文件夹 → 双击 <b>merge-and-unzip.bat</b> → 自动合并出 zip → 右键解压 → 双击 <b>PenguinPet.exe</b> ✅<br>
-      <span style="font-size:12.5px;color:#7b95a4">（用 Windows 自带命令合并，不用装任何软件；分片已做 SHA256 校验，与官方 zip 完全一致）</span></li>
-    <li>🪶 不想下大文件：<a href="dl/PenguinPet-Lite.zip" style="color:#2b6ea8;font-weight:700">轻量版（16KB）</a>，解压后双击 start.bat 就能玩。</li>
-    <li>📄 详细说明：<a href="dl/HOW-TO-DOWNLOAD.txt" style="color:#2b6ea8;font-weight:700">HOW-TO-DOWNLOAD.txt</a></li>
-  </ul>
-
-  <h2 class="sec">下载失败怎么办？</h2>
-  <ul class="rules">
-    <li>💡 页面本身能打开、但点下载没反应或特别慢：多半是网络对 <b>github.com</b> 的间歇性阻断（不影响文件本身）。<b>过几分钟重试</b>通常就好了。</li>
-    <li>📶 换个网络试试：手机热点、或换个时段（凌晨/白天速度差别很大）。</li>
-    <li>🧩 想先尝鲜不想下大文件：下载 <b>轻量版（16KB）</b>，或用上方的<b>在线试玩</b>。</li>
-    <li>🐧 实在下不动：可以直接找我要（百度网盘 / 微信传文件都行）。</li>
-  </ul>
-
-  <p class="foot">
-    首次运行桌面版若出现蓝色的「Windows 已保护你的电脑」提示：点「更多信息」→「仍要运行」即可（个人小应用没有代码签名证书，属正常现象）。<br>
-    退出方式：右键企鹅 → 🚪 退出桌宠，或按快捷键 Ctrl + Shift + Q
-  </p>
-
-  <p class="back"><a href="/">← 返回首页</a></p>
-</div>
 </body>
 </html>
