@@ -3,12 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>企鹅桌宠 🐧</title>
+<title>元宵 · 企鹅桌宠 🐧</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%90%A7%3C/text%3E%3C/svg%3E">
 <style>
 /* ============================================================
-   🐧 企鹅桌宠 —— 单文件版
-   纯 CSS 绘制企鹅，无任何外部资源
-   浏览器直接打开可玩；放进 Electron 即成为桌面悬浮宠物
+   🐧 元宵 · 企鹅桌宠  v2.0
+   · 纯 CSS 绘制 + 3D 透视光影（圆滚滚立体感）
+   · 11 款皮肤 · 4 套造型 · 投喂变圆 · 摸头杀 · 作息生物钟
+   · Web Audio 合成奶萌音效 + 系统语音说话
+   · 头顶信息牌：时钟 / 倒计时 / 亲密度 / 陪伴时长
    ============================================================ */
 
 /* ---------- 基础 ---------- */
@@ -19,7 +22,6 @@ body{
   user-select:none;-webkit-user-select:none;
   background:linear-gradient(180deg,#cfe9ff 0%,#e9f5ff 42%,#eefaf1 60%,#dcf2e4 100%);
 }
-/* Electron 桌面模式：整页透明，桌面上只剩企鹅 */
 body.electron{background:transparent}
 #floor{
   position:fixed;left:0;right:0;bottom:0;height:12vh;
@@ -35,105 +37,134 @@ body.electron #floor{display:none}
 body.electron #hint{display:none}
 
 /* ============================================================
-   🐧 企鹅本体
-   #pet 负责位置（JS 设置 transform）
-   .flip 负责左右朝向（scaleX 翻转）
-   .pet-inner 负责姿态（歪身、拖拽倾斜、跳起、缩一下）
-   .penguin 负责呼吸 / 走路起伏
+   🐧 企鹅本体（3D 透视）
    ============================================================ */
 #pet{
   position:fixed;left:0;top:0;width:96px;height:118px;
   cursor:grab;touch-action:none;z-index:10;
-  /* —— 皮肤配色（skin-* 类会覆盖这些变量）—— */
+  perspective:520px;
   --body:#2c3138; --body2:#171b21; --body-hi:#4a525c;
   --belly:#ffffff; --facec:#ffffff;
   --cheek:#ff8fb0; --cheek-op:.35;
   --beak:#ffb340; --foot:#ffb340;
   --ex:0px; --ey:0px; --tilt:0deg;
+  --ry:0deg; --rx:0deg;
+  --gx:0px; --gy:0px;
+  --grow:1;
 }
 #pet.dragging{cursor:grabbing}
 
 .flip{position:relative;width:100%;height:100%;transition:transform .18s ease}
 #pet.facing-left .flip{transform:scaleX(-1)}
 
-.pet-inner{position:relative;width:100%;height:100%;transform-origin:50% 90%;
-  transition:transform .3s ease}
-.penguin{position:relative;width:100%;height:100%;
-  animation:breathe 2.2s ease-in-out infinite}
+.pet-inner{position:relative;width:100%;height:100%;transform-origin:50% 90%;transition:transform .3s ease}
+.stage3d{
+  position:relative;width:100%;height:100%;
+  transform-style:preserve-3d;
+  transform:rotateY(var(--ry)) rotateX(var(--rx));
+  transition:transform .25s ease-out;
+}
+.penguin{
+  position:relative;width:100%;height:100%;
+  transform-style:preserve-3d;
+  transform:scale(var(--grow));
+  animation:breathe 2.2s ease-in-out infinite;
+}
+@keyframes breathe{0%,100%{transform:scale(var(--grow))}50%{transform:translateY(-2.5px) scale(calc(var(--grow) * 1.015), calc(var(--grow) * .985))}}
 
-/* 呼吸（基础） */
-@keyframes breathe{0%,100%{transform:translateY(0) scale(1,1)}50%{transform:translateY(-2.5px) scale(1.015,.985)}}
-
-/* —— 影子 —— */
 .shadow{position:absolute;left:50%;bottom:-5px;width:74px;height:13px;margin-left:-37px;
-  border-radius:50%;background:rgba(50,80,70,.22);filter:blur(4px);transition:all .3s ease}
+  border-radius:50%;background:rgba(50,80,70,.24);filter:blur(4px);transition:all .3s ease}
 
-/* —— 脚 —— */
-.foot{position:absolute;bottom:1px;width:24px;height:11px;border-radius:60% 60% 50% 50%;
-  background:linear-gradient(180deg,var(--foot),#ef9d16);z-index:2;transition:transform .2s}
+.foot{position:absolute;bottom:1px;width:25px;height:12px;z-index:2;
+  border-radius:60% 60% 50% 50% / 70% 70% 30% 30%;
+  background:radial-gradient(120% 140% at 40% 20%,#ffd08a,var(--foot) 55%,#d98b12 100%);
+  box-shadow:0 2px 3px rgba(120,80,0,.25), inset 0 -2px 2px rgba(150,90,0,.25);
+  transition:transform .2s}
 .foot-l{left:12px}
 .foot-r{right:12px}
 
-/* —— 身体 —— */
 .body{position:absolute;left:8px;bottom:7px;width:80px;height:74px;z-index:3;
   border-radius:50% 50% 46% 46% / 58% 58% 42% 42%;
-  background:radial-gradient(120% 120% at 32% 20%,var(--body-hi) 0%,var(--body) 45%,var(--body2) 100%)}
+  background:radial-gradient(120% 120% at 32% 18%, var(--body-hi) 0%, var(--body) 46%, var(--body2) 100%);
+  box-shadow:
+    inset -8px -10px 18px rgba(0,0,0,.35),
+    inset 6px 6px 14px rgba(255,255,255,.10),
+    0 6px 12px rgba(20,40,60,.18);
+}
 .belly{position:absolute;left:14px;top:15px;width:52px;height:53px;
   border-radius:50% 50% 48% 48% / 54% 54% 46% 46%;
-  background:radial-gradient(120% 120% at 40% 22%,#ffffff 42%,var(--belly) 100%);
-  box-shadow:inset 0 -3px 6px rgba(0,0,0,.05)}
+  background:radial-gradient(120% 120% at 38% 20%, #ffffff 40%, var(--belly) 100%);
+  box-shadow:inset 0 -4px 8px rgba(0,0,0,.07), inset 0 3px 6px rgba(255,255,255,.9), 0 -2px 6px rgba(255,255,255,.35);
+}
 
-/* —— 翅膀 —— */
 .wing{position:absolute;top:50px;width:20px;height:43px;z-index:4;
   border-radius:60% 60% 50% 50% / 70% 70% 30% 30%;
-  background:linear-gradient(180deg,var(--body) 8%,var(--body2));
-  transform-origin:50% 8%;transition:transform .25s ease}
+  background:linear-gradient(160deg, var(--body-hi) 0%, var(--body) 45%, var(--body2) 100%);
+  transform-origin:50% 8%;
+  box-shadow:inset -3px -4px 8px rgba(0,0,0,.35), 2px 3px 6px rgba(20,40,60,.18);
+  transition:transform .25s ease;
+}
 .wing-l{left:-2px;transform:rotate(7deg)}
 .wing-r{right:-2px;transform:rotate(-7deg)}
 
-/* —— 头 —— */
 .head{position:absolute;left:10px;top:0;width:76px;height:70px;z-index:5;
   border-radius:50% 50% 46% 46% / 52% 52% 48% 48%;
-  background:radial-gradient(120% 120% at 34% 22%,var(--body-hi) 0%,var(--body) 46%,var(--body2) 100%);
-  transform:rotate(var(--tilt));transform-origin:50% 86%;transition:transform .35s ease}
+  background:radial-gradient(120% 120% at 34% 20%, var(--body-hi) 0%, var(--body) 46%, var(--body2) 100%);
+  box-shadow:
+    inset -7px -9px 16px rgba(0,0,0,.35),
+    inset 5px 5px 12px rgba(255,255,255,.10),
+    0 4px 10px rgba(20,40,60,.16);
+  transform:rotate(var(--tilt)) rotateX(var(--headx,0deg));
+  transform-origin:50% 86%;
+  transition:transform .35s ease;
+  transform-style:preserve-3d;
+}
 
-/* —— 脸（白色区域 + 五官）—— */
 .face{position:absolute;left:9px;top:12px;width:58px;height:52px;border-radius:50%;
-  background:var(--facec);box-shadow:inset 0 -4px 6px rgba(0,0,0,.06);
-  transform-origin:50% 100%;transition:transform .3s ease}
+  background:radial-gradient(120% 120% at 40% 20%, #ffffff 55%, var(--facec) 100%);
+  box-shadow:inset 0 -5px 8px rgba(0,0,0,.07), 0 2px 5px rgba(0,0,0,.06);
+  transform-origin:50% 100%;transition:transform .3s ease;
+}
 
-/* 眼睛：.eye 负责"看的方向"，.lid 负责眨眼/闭眼 */
 .eye{position:absolute;top:16px;width:13px;height:15px;border-radius:50%;
-  background:#23262e;overflow:hidden;
+  background:radial-gradient(120% 120% at 35% 30%, #4a5160 0%, #23262e 55%, #0d0f14 100%);
+  overflow:hidden;
+  box-shadow:inset 0 -1px 2px rgba(255,255,255,.35), 0 1px 2px rgba(0,0,0,.25);
   transform:translate(var(--ex),var(--ey));transition:transform .18s ease-out}
 .eye-l{left:10px}
 .eye-r{right:10px}
-.eye .glint{position:absolute;left:3px;top:2px;width:4px;height:4px;border-radius:50%;
-  background:#fff;opacity:.95}
+.eye .glint{position:absolute;left:3px;top:2px;width:5px;height:5px;border-radius:50%;
+  background:#fff;opacity:.98;box-shadow:0 0 3px rgba(255,255,255,.9)}
+.eye .glint.g2{left:9px;top:9px;width:2.5px;height:2.5px;opacity:.6}
 .lid{position:absolute;inset:0;background:var(--facec);border-bottom:2px solid #262a33;
-  border-radius:50%;transform:scaleY(0);transform-origin:top center;
-  transition:transform .16s ease}
+  border-radius:50%;transform:scaleY(0);transform-origin:top center;transition:transform .16s ease}
 
-/* 腮红 */
-.blush{position:absolute;top:31px;width:13px;height:9px;border-radius:50%;
-  background:var(--cheek);opacity:var(--cheek-op);filter:blur(1.6px);transition:opacity .4s}
-.blush-l{left:3px}
-.blush-r{right:3px}
+.blush{position:absolute;top:31px;width:14px;height:9px;border-radius:50%;
+  background:radial-gradient(circle, var(--cheek) 0%, rgba(255,255,255,0) 72%);
+  opacity:var(--cheek-op);transition:opacity .4s}
+.blush-l{left:2px}
+.blush-r{right:2px}
 
-/* 嘴巴 */
 .beak{position:absolute;left:50%;top:29px;width:16px;height:12px;margin-left:-8px;
-  background:linear-gradient(180deg,var(--beak),#ef9d16);
-  border-radius:50% 50% 50% 50% / 34% 34% 92% 92%;transition:transform .15s}
+  background:radial-gradient(120% 120% at 35% 20%, #ffd98a, var(--beak) 55%, #d98b12 100%);
+  border-radius:50% 50% 50% 50% / 34% 34% 92% 92%;
+  box-shadow:0 2px 3px rgba(150,90,0,.3), inset 0 -1px 2px rgba(255,255,255,.5);
+  transition:transform .15s}
 
-/* 围巾（蓝色围巾款 / 极光款显示，颜色可用 --scarf1/2 定制） */
+.gloss{position:absolute;left:26px;top:26px;width:34px;height:26px;border-radius:50%;
+  background:radial-gradient(circle at 40% 35%, rgba(255,255,255,.75), rgba(255,255,255,0) 70%);
+  transform:translate(var(--gx),var(--gy));pointer-events:none;z-index:6;filter:blur(1px)}
+
+/* ============================================================
+   🎒 造型配件
+   ============================================================ */
 .scarf{display:none;position:absolute;left:13px;top:63px;width:70px;height:14px;z-index:6;
   border-radius:8px;background:linear-gradient(180deg,var(--scarf1,#6aa8ff),var(--scarf2,#3f7fe0));
   box-shadow:inset 0 -2px 3px rgba(0,0,0,.16)}
 .scarf i{position:absolute;right:7px;top:9px;width:14px;height:26px;border-radius:6px;
   background:linear-gradient(180deg,var(--scarf1,#5b9bff),var(--scarf2,#3a76d6));transform:rotate(-7deg)}
-.skin-scarf .scarf,.skin-aurora .scarf,.skin-christmas .scarf,.skin-newyear .scarf{display:block}
+#pet.skin-scarf .scarf,#pet.skin-aurora .scarf,#pet.skin-christmas .scarf,#pet.skin-newyear .scarf{display:block}
 
-/* 蝴蝶结（樱花款） */
 .bow{display:none;position:absolute;left:50%;top:95px;width:34px;height:16px;margin-left:-17px;z-index:7}
 .bow::before,.bow::after{content:"";position:absolute;top:0;width:15px;height:16px;
   border-radius:60% 40% 60% 40%;background:linear-gradient(180deg,#ffa8cb,#ef5f9c)}
@@ -141,24 +172,20 @@ body.electron #hint{display:none}
 .bow::after{right:0;transform:rotate(8deg)}
 .bow i{position:absolute;left:50%;top:3px;width:9px;height:10px;margin-left:-4.5px;z-index:2;
   border-radius:50%;background:linear-gradient(180deg,#ffc2da,#e8488a)}
-.skin-sakura .bow{display:block}
+#pet.skin-sakura .bow{display:block}
 
-/* 头顶小花（樱花款） */
 .flower-top{display:none;position:absolute;left:50%;top:-10px;margin-left:-8px;width:16px;height:16px;z-index:8}
 .flower-top::before{content:"❀";position:absolute;left:0;top:-2px;font-size:16px;color:#ff9ec4;
   text-shadow:0 1px 3px rgba(255,120,170,.5)}
-.skin-sakura .flower-top{display:block}
+#pet.skin-sakura .flower-top{display:block}
 
-/* 小圆帽（暖阳款） */
 .hat{display:none;position:absolute;left:50%;top:-10px;width:40px;height:22px;margin-left:-20px;z-index:8}
-.hat::before{content:"";position:absolute;left:0;bottom:0;width:40px;height:6px;border-radius:6px;
-  background:#e59a33}
+.hat::before{content:"";position:absolute;left:0;bottom:0;width:40px;height:6px;border-radius:6px;background:#e59a33}
 .hat::after{content:"";position:absolute;left:8px;bottom:4px;width:24px;height:15px;
   border-radius:12px 12px 4px 4px;background:linear-gradient(180deg,#ffd489,#f0a53a);
   box-shadow:inset 0 -2px 3px rgba(0,0,0,.12)}
-.skin-sunny .hat{display:block}
+#pet.skin-sunny .hat{display:block}
 
-/* 圣诞帽（圣诞限定款） */
 .santa{display:none;position:absolute;left:50%;top:-16px;width:46px;height:28px;margin-left:-23px;z-index:9}
 .santa::before{content:"";position:absolute;left:7px;bottom:6px;width:32px;height:22px;
   border-radius:50% 50% 18% 18% / 72% 72% 28% 28%;
@@ -167,23 +194,54 @@ body.electron #hint{display:none}
   background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.12)}
 .santa i{position:absolute;right:-3px;top:-8px;width:13px;height:13px;border-radius:50%;background:#fff;
   box-shadow:0 1px 3px rgba(0,0,0,.15)}
-.skin-christmas .santa{display:block}
+#pet.skin-christmas .santa{display:block}
 
-/* 金色小皇冠（新年限定款） */
 .crown{display:none;position:absolute;left:50%;top:-13px;width:38px;height:20px;margin-left:-19px;z-index:9}
 .crown::before{content:"";position:absolute;left:0;bottom:0;width:38px;height:7px;border-radius:4px;
   background:linear-gradient(180deg,#ffe08a,#dfa123)}
 .crown::after{content:"";position:absolute;left:2px;bottom:6px;width:34px;height:13px;
   background:linear-gradient(180deg,#ffeaa8,#f0b53c);
   clip-path:polygon(0 100%,10% 0,27% 62%,50% 0,73% 62%,90% 0,100% 100%)}
-.skin-newyear .crown{display:block}
+#pet.skin-newyear .crown{display:block}
+
+/* —— 造型：学霸款 —— */
+.glasses{display:none;position:absolute;left:8px;top:24px;width:42px;height:16px;z-index:9}
+.glasses::before,.glasses::after{content:"";position:absolute;top:0;width:14px;height:14px;
+  border:2px solid #4a3b2a;border-radius:50%;background:rgba(200,225,245,.32);
+  box-shadow:inset 0 0 4px rgba(255,255,255,.8)}
+.glasses::before{left:0}
+.glasses::after{right:0}
+.glasses i{position:absolute;left:15px;top:6px;width:12px;height:2px;background:#4a3b2a}
+#pet.outfit-study .glasses{display:block}
+.bag{display:none;position:absolute;left:58px;top:44px;width:30px;height:36px;z-index:2;
+  border-radius:8px 8px 10px 10px;background:linear-gradient(160deg,#f0a04b,#d97b22);
+  box-shadow:inset -3px -3px 6px rgba(0,0,0,.2), 2px 3px 6px rgba(60,40,10,.25);
+  transform:rotate(-8deg)}
+.bag::before{content:"";position:absolute;left:5px;top:-6px;width:20px;height:10px;
+  border:2px solid #c46a15;border-bottom:none;border-radius:10px 10px 0 0}
+#pet.outfit-study .bag{display:block}
+
+/* —— 造型：摸鱼款 —— */
+.leaf{display:none;position:absolute;left:50%;top:-12px;margin-left:-9px;width:18px;height:12px;z-index:9;
+  background:linear-gradient(140deg,#8ed07a,#3f8f4a);
+  border-radius:0 100% 0 100%;transform:rotate(-18deg);
+  box-shadow:0 1px 2px rgba(30,70,30,.3)}
+#pet.outfit-lazy .leaf{display:block}
+.grass{display:none;position:absolute;left:44px;top:38px;width:16px;height:3px;z-index:9;
+  background:linear-gradient(90deg,#8ed07a,#3f8f4a);border-radius:2px;transform:rotate(-12deg)}
+#pet.outfit-lazy .grass{display:block}
+
+/* —— 造型：节日款 —— */
+.redflower{display:none;position:absolute;left:50%;top:-13px;margin-left:-10px;width:20px;height:20px;z-index:9}
+.redflower::before{content:"";position:absolute;left:2px;top:2px;width:16px;height:16px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%, #ff8b8b, #d32f2f 70%);
+  box-shadow:0 0 0 3px rgba(255,255,255,.55), 0 2px 4px rgba(150,0,0,.35)}
+.redflower i{position:absolute;left:8px;top:7px;width:6px;height:6px;border-radius:50%;background:#ffe082}
+#pet.outfit-festival .redflower{display:block}
 
 /* ============================================================
-   🎨 十一款皮肤（每款就是一组颜色变量，可自由增删）
-   粉系：粉粉腮红 · 樱花蝴蝶结 · 玫瑰粉 · 蜜桃粉 · 棉花糖
-   节日限定：圣诞 · 新年
+   🎨 11 款皮肤（必须 #pet.xxx，否则会被 #pet 默认变量覆盖）
    ============================================================ */
-/* 注意：必须写成 #pet.skin-xxx，否则会被上面的 #pet 默认变量覆盖（ID 优先级更高） */
 #pet.skin-classic{--body:#2c3138;--body2:#171b21;--body-hi:#4a525c;--belly:#ffffff;--facec:#ffffff;
   --cheek:#ff8fb0;--cheek-op:.35;--beak:#ffb340;--foot:#ffb340}
 #pet.skin-blush{--body:#3a2b34;--body2:#241820;--body-hi:#5a4450;--belly:#fff4f8;--facec:#fff9fb;
@@ -196,61 +254,55 @@ body.electron #hint{display:none}
   --cheek:#7fb6ff;--cheek-op:.6;--beak:#8fd0ff;--foot:#8fd0ff;--scarf1:#8fd3ff;--scarf2:#4a7fd6}
 #pet.skin-sunny{--body:#4a3a2c;--body2:#2c2119;--body-hi:#6f5540;--belly:#fff6e8;--facec:#fffaef;
   --cheek:#ffab5e;--cheek-op:.7;--beak:#ffb43c;--foot:#ffb43c}
-/* —— 粉系三款 —— */
 #pet.skin-rose{--body:#e8629b;--body2:#c33d76;--body-hi:#ff9dc4;--belly:#fff5f9;--facec:#fffafc;
   --cheek:#ff2e74;--cheek-op:.7;--beak:#ff9ec4;--foot:#ff9ec4}
 #pet.skin-peach{--body:#f0937f;--body2:#cf6a58;--body-hi:#ffbda9;--belly:#fff7f2;--facec:#fffaf6;
   --cheek:#ff7f6b;--cheek-op:.65;--beak:#ffb27a;--foot:#ffb27a}
 #pet.skin-cotton{--body:#e9a6d8;--body2:#c274b4;--body-hi:#ffc9ef;--belly:#fdf5ff;--facec:#fffafe;
   --cheek:#ff86cf;--cheek-op:.75;--beak:#ffb0e0;--foot:#ffb0e0}
-/* —— 节日限定两款 —— */
 #pet.skin-christmas{--body:#8c2326;--body2:#541214;--body-hi:#b83b3d;--belly:#fff5f5;--facec:#fffafa;
   --cheek:#ff6b6b;--cheek-op:.7;--beak:#ffb340;--foot:#ffb340;--scarf1:#9cdb8e;--scarf2:#418f4a}
 #pet.skin-newyear{--body:#6d1f33;--body2:#3f1120;--body-hi:#9c3350;--belly:#fff4e4;--facec:#fffbf2;
   --cheek:#ffb347;--cheek-op:.75;--beak:#ffd05c;--foot:#ffd05c;--scarf1:#ffdd85;--scarf2:#d99a20}
 
 /* ============================================================
-   😊 情绪：开心 / 好奇 / 无聊 / 困倦
+   😊 情绪
    ============================================================ */
-/* 开心：眼睛弯弯 ^^、腮红明显、身体轻快起伏 */
 #pet.mood-happy{--cheek-op:.75}
-.mood-happy .eye{background:transparent;height:9px;border-radius:50% 50% 0 0;
-  border-top:3px solid #23262e}
-.mood-happy .eye .glint{display:none}
-.mood-happy .lid{display:none}
-.mood-happy .penguin{animation:breathe-happy 1.5s ease-in-out infinite}
-@keyframes breathe-happy{0%,100%{transform:translateY(0) scale(1,1)}50%{transform:translateY(-3.5px) scale(1.02,.98)}}
+#pet.mood-happy .eye{background:transparent;height:9px;border-radius:50% 50% 0 0;
+  border-top:3px solid #23262e;box-shadow:none}
+#pet.mood-happy .eye .glint{display:none}
+#pet.mood-happy .lid{display:none}
+#pet.mood-happy .penguin{animation:breathe-happy 1.5s ease-in-out infinite}
+@keyframes breathe-happy{0%,100%{transform:scale(var(--grow))}50%{transform:translateY(-3.5px) scale(calc(var(--grow) * 1.02), calc(var(--grow) * .98))}}
 
-/* 好奇：头歪向一边，眼睛睁大，身体微微前倾 */
-.mood-curious .pet-inner{transform:rotate(-4deg)}
-.mood-curious .eye{width:14px;height:17px;top:14px}
+#pet.mood-curious .pet-inner{transform:rotate(-4deg)}
+#pet.mood-curious .eye{width:14px;height:17px;top:14px}
+#pet.mood-curious .head{--headx:2deg}
 #pet.mood-curious{--cheek-op:.6}
-.mood-curious .penguin{animation:breathe 1.9s ease-in-out infinite}
+#pet.mood-curious .penguin{animation:breathe 1.9s ease-in-out infinite}
 
-/* 无聊：眼神呆滞、身体靠一边、呼吸变慢 */
-.mood-bored .pet-inner{transform:rotate(3.5deg)}
-.mood-bored .lid{transform:scaleY(.45)}
-.mood-bored .eye{opacity:.85}
-.mood-bored .face{transform:translateX(2px)}
-.mood-bored .penguin{animation:breathe-slow 4.2s ease-in-out infinite}
-@keyframes breathe-slow{0%,100%{transform:translateY(0) scale(1,1)}50%{transform:translateY(-1.5px) scale(1.01,.99)}}
+#pet.mood-bored .pet-inner{transform:rotate(3.5deg)}
+#pet.mood-bored .lid{transform:scaleY(.45)}
+#pet.mood-bored .eye{opacity:.85}
+#pet.mood-bored .face{transform:translateX(2px)}
+#pet.mood-bored .penguin{animation:breathe-slow 4.2s ease-in-out infinite}
+@keyframes breathe-slow{0%,100%{transform:scale(var(--grow))}50%{transform:translateY(-1.5px) scale(calc(var(--grow) * 1.008), calc(var(--grow) * .992))}}
 
-/* 困倦：眼睛眯成一条缝、头一点一点 */
-.mood-sleepy .lid{transform:scaleY(.84)}
-.mood-sleepy .eye{transform:translate(var(--ex),1.5px)}
-.mood-sleepy .face{animation:nod 4.4s ease-in-out infinite}
+#pet.mood-sleepy .lid{transform:scaleY(.84)}
+#pet.mood-sleepy .eye{transform:translate(var(--ex),1.5px)}
+#pet.mood-sleepy .face{animation:nod 4.4s ease-in-out infinite}
 @keyframes nod{0%,58%,100%{transform:translateY(0) rotate(0)}70%{transform:translateY(3px) rotate(5deg)}82%{transform:translateY(0) rotate(0)}}
-.mood-sleepy .penguin{animation:breathe-slow 4.6s ease-in-out infinite}
+#pet.mood-sleepy .penguin{animation:breathe-slow 4.6s ease-in-out infinite}
 
 /* ============================================================
    🎬 动作状态
    ============================================================ */
-/* 鼠标靠近：腮红加深 */
 #pet.near-mouse{--cheek-op:.95}
+#pet.badge-on .badge{opacity:1}
 
-/* 走路：身体起伏 + 双脚交替 + 翅膀轻摆 */
 .walking .penguin{animation:walk-bob .46s ease-in-out infinite}
-@keyframes walk-bob{0%,100%{transform:translateY(0) rotate(-1.2deg)}50%{transform:translateY(-3px) rotate(1.2deg)}}
+@keyframes walk-bob{0%,100%{transform:scale(var(--grow)) rotate(-1.2deg)}50%{transform:translateY(-3px) scale(var(--grow)) rotate(1.2deg)}}
 .walking .foot-l{animation:step-l .46s ease-in-out infinite}
 .walking .foot-r{animation:step-r .46s ease-in-out infinite}
 @keyframes step-l{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-4px) rotate(-10deg)}}
@@ -260,10 +312,8 @@ body.electron #hint{display:none}
 @keyframes swing-l{0%,100%{transform:rotate(7deg)}50%{transform:rotate(20deg)}}
 @keyframes swing-r{0%,100%{transform:rotate(-7deg)}50%{transform:rotate(-20deg)}}
 
-/* 眨眼 */
 .blink .lid{transform:scaleY(1) !important;transition:transform .09s ease}
 
-/* 点击：先缩一下，再开心扑腾 */
 .squish .pet-inner{animation:squish .22s ease}
 @keyframes squish{0%{transform:scale(1,1)}45%{transform:scale(1.1,.86) translateY(3px)}100%{transform:scale(1,1)}}
 .flap .wing-l{animation:flap-l .2s ease-in-out 4}
@@ -271,55 +321,74 @@ body.electron #hint{display:none}
 @keyframes flap-l{0%,100%{transform:rotate(7deg)}50%{transform:rotate(58deg)}}
 @keyframes flap-r{0%,100%{transform:rotate(-7deg)}50%{transform:rotate(-58deg)}}
 .flap .penguin{animation:hop .26s ease-in-out 2}
-@keyframes hop{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+@keyframes hop{0%,100%{transform:scale(var(--grow))}50%{transform:translateY(-7px) scale(var(--grow))}}
 
-/* 拖拽：身体随速度倾斜 */
 .dragging .pet-inner{transform:rotate(var(--drag-tilt,0deg))}
-/* 松手：站稳后左右晃一下恢复平衡 */
 .wobble .pet-inner{animation:wobble .85s ease-in-out}
 @keyframes wobble{0%{transform:rotate(0)}18%{transform:rotate(-8deg)}38%{transform:rotate(7deg)}58%{transform:rotate(-4deg)}78%{transform:rotate(2deg)}100%{transform:rotate(0)}}
 
-/* 双击彩蛋：跳起来转一圈 */
-.jumping .pet-inner{animation:jump-spin .95s cubic-bezier(.3,.05,.35,1)}
-@keyframes jump-spin{
-  0%{transform:translateY(0) rotate(0) scale(1)}
-  28%{transform:translateY(-48px) rotate(130deg) scale(1.04)}
-  62%{transform:translateY(-26px) rotate(300deg) scale(1.02)}
-  100%{transform:translateY(0) rotate(360deg) scale(1)}
+/* 双击盲盒动作 */
+.dbl-jump .pet-inner{animation:dbl-jump .9s ease}
+@keyframes dbl-jump{
+  0%{transform:translateY(0)}25%{transform:translateY(-42px) rotate(-5deg)}
+  45%{transform:translateY(-30px) rotate(5deg)}65%{transform:translateY(-16px) rotate(-4deg)}
+  85%{transform:translateY(-4px) rotate(2deg)}100%{transform:translateY(0) rotate(0)}
 }
-.jumping .shadow{transform:scale(.72);opacity:.45}
+.dbl-spin .stage3d{animation:dbl-spin 1.05s cubic-bezier(.35,.05,.3,1)}
+@keyframes dbl-spin{
+  0%{transform:rotateY(0deg) rotateX(0deg) scale(1)}
+  50%{transform:rotateY(180deg) rotateX(6deg) scale(1.06)}
+  100%{transform:rotateY(360deg) rotateX(0deg) scale(1)}
+}
+.dbl-spin .shadow{transform:scale(.8);opacity:.5}
+.dbl-doze .pet-inner{animation:dbl-doze 2.4s ease}
+@keyframes dbl-doze{
+  0%{transform:translateY(0) scale(1,1)}20%{transform:translateY(9px) scale(1.06,.9)}
+  70%{transform:translateY(9px) scale(1.06,.9)}100%{transform:translateY(0) scale(1,1)}
+}
+.dbl-doze .lid{transform:scaleY(1) !important}
+.dbl-wow .head{animation:dbl-wow .7s ease}
+@keyframes dbl-wow{0%,100%{transform:rotate(var(--tilt)) scale(1)}35%{transform:rotate(var(--tilt)) scale(1.12)}}
+.wowmark{position:absolute;left:50%;top:-26px;margin-left:-6px;font-size:22px;font-weight:900;color:#ff4d6d;
+  text-shadow:0 2px 6px rgba(255,255,255,.9);animation:wow-up 1.2s ease forwards;z-index:12}
+@keyframes wow-up{0%{transform:translateY(8px) scale(.4);opacity:0}30%{transform:translateY(-4px) scale(1.2);opacity:1}100%{transform:translateY(-18px) scale(1);opacity:0}}
 
-/* 害羞：低头、腮红拉满 */
-#pet.shy{--cheek-op:1}
-.shy .face{transform:translateY(5px)}
-.shy .head{transform:rotate(9deg)}
+/* 摸头杀 */
+.patting .lid{transform:scaleY(.92) !important}
+.patting{--cheek-op:1}
+.patting .head{--headx:10deg}
+.patting .pet-inner{transform:rotate(var(--pat-lean,0deg))}
+.shy-turn .head{--tilt:16deg;--headx:4deg}
+.shy-turn .face{transform:translateX(-4px)}
 
-/* 吃东西：嘴巴一张一合 */
+.yawning .beak{animation:yawn 2.4s ease-in-out}
+@keyframes yawn{0%,100%{transform:scaleY(1)}45%{transform:scaleY(2.1)}}
+.yawning .lid{transform:scaleY(.9)}
+
 .eating .beak{animation:chew .26s ease-in-out 4}
 @keyframes chew{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.7)}}
+.toofull .pet-inner{animation:shake-no .6s ease 2}
+@keyframes shake-no{0%,100%{transform:rotate(0)}25%{transform:rotate(-6deg)}75%{transform:rotate(6deg)}}
 
-/* 摸头享受：闭眼微笑 */
 .enjoying .lid{transform:scaleY(1) !important}
 .enjoying .penguin{animation:breathe-happy 1.1s ease-in-out infinite}
 
-/* 睡觉：完全闭眼、蹲下 */
 .sleeping .lid{transform:scaleY(1) !important}
 .sleeping .pet-inner{transform:translateY(5px) scale(1.02,.93)}
 .sleeping .penguin{animation:breathe-sleep 3.4s ease-in-out infinite}
-@keyframes breathe-sleep{0%,100%{transform:translateY(0)}50%{transform:translateY(-1.5px)}}
+@keyframes breathe-sleep{0%,100%{transform:scale(var(--grow))}50%{transform:translateY(-1.5px) scale(var(--grow))}}
+.one-eye .eye-l .lid{transform:scaleY(1) !important}
+.one-eye .eye-r{opacity:.9}
 
-/* 坐下休息 */
 .sitting .pet-inner{transform:translateY(6px) scale(1.04,.91)}
 .sitting .foot-l{transform:translateX(-4px) rotate(-8deg)}
 .sitting .foot-r{transform:translateX(4px) rotate(8deg)}
-
-/* 东张西望 */
 .looking .head{animation:look-around 1.7s ease-in-out}
 @keyframes look-around{0%,100%{transform:rotate(0)}22%{transform:rotate(-13deg)}55%{transform:rotate(11deg)}80%{transform:rotate(-4deg)}}
-
-/* 整理羽毛：翅膀蹭身体 */
 .preening .wing-r{animation:preen .55s ease-in-out 4}
 @keyframes preen{0%,100%{transform:rotate(-7deg)}50%{transform:rotate(-52deg)}}
+.swapping .stage3d{animation:dbl-spin 1s ease}
+.levelup .penguin{animation:hop .3s ease-in-out 3}
 
 /* ============================================================
    💬 气泡
@@ -327,7 +396,7 @@ body.electron #hint{display:none}
 .bubble{
   position:absolute;left:50%;bottom:calc(100% + 10px);
   transform:translate(-50%,7px);
-  max-width:200px;padding:7px 12px;
+  max-width:210px;padding:7px 12px;
   background:#fff;border-radius:14px;
   box-shadow:0 6px 18px rgba(90,120,110,.24);
   color:#3d4a52;font-size:12.5px;line-height:1.5;text-align:center;
@@ -341,7 +410,24 @@ body.electron #hint{display:none}
   box-shadow:0 10px 26px rgba(255,120,160,.38)}
 
 /* ============================================================
-   🎯 右键圆形菜单
+   ⏰ 信息牌
+   ============================================================ */
+.badge{
+  position:absolute;left:calc(100% + 6px);top:28%;
+  min-width:126px;padding:7px 10px;border-radius:12px;
+  background:rgba(255,255,255,.92);border:1px solid #e6eef7;
+  box-shadow:0 6px 16px rgba(60,90,120,.18);
+  font-size:12px;line-height:1.55;color:#31475c;white-space:nowrap;
+  opacity:0;pointer-events:none;transition:opacity .3s ease;z-index:15;
+}
+#pet.badge-left .badge{left:auto;right:calc(100% + 6px)}
+.badge .b-time{font-size:14px;font-weight:800;color:#1a6fc4;letter-spacing:.04em}
+.badge .b-goal{color:#c2185b;font-weight:700}
+.badge .b-bond{color:#8a5a00}
+.badge .b-sep{height:1px;background:#eef4fa;margin:4px 0}
+
+/* ============================================================
+   🎯 右键双环菜单
    ============================================================ */
 #menu{position:fixed;left:0;top:0;z-index:60;pointer-events:none}
 #menu .item{
@@ -355,48 +441,54 @@ body.electron #hint{display:none}
   transition:transform .3s cubic-bezier(.3,1.6,.5,1),opacity .2s ease,box-shadow .2s ease;
 }
 #menu.open .item{opacity:1;transform:scale(1)}
-#menu.open .item:hover{transform:scale(1.16);box-shadow:0 8px 22px rgba(255,110,160,.5),inset 0 0 0 2px #ff8fb0}
+#menu.open .item:hover{transform:scale(1.18);box-shadow:0 8px 22px rgba(255,110,160,.5),inset 0 0 0 2px #ff8fb0}
 #menu .item .label{
-  position:absolute;top:52px;left:50%;transform:translateX(-50%);
+  position:absolute;top:50px;left:50%;transform:translateX(-50%);
   white-space:nowrap;font-size:11px;color:#5b6b73;
   background:rgba(255,255,255,.95);padding:2px 8px;border-radius:8px;
   box-shadow:0 3px 8px rgba(90,110,120,.18);
   opacity:0;transition:opacity .2s ease;pointer-events:none;
 }
 #menu .item:hover .label{opacity:1}
+#menu .item.ring2{background:rgba(255,255,255,.93);
+  box-shadow:0 6px 16px rgba(80,110,120,.22),inset 0 0 0 2px rgba(180,210,240,.75)}
 
 /* ============================================================
-   ✏️ 改称呼小面板
+   ✏️ 设置面板
    ============================================================ */
-#nameBox{
+.panel{
   position:fixed;left:50%;top:50%;transform:translate(-50%,-46%) scale(.92);
-  width:min(300px,86vw);padding:20px 20px 16px;z-index:80;
-  background:linear-gradient(165deg,rgba(255,253,254,.97),rgba(255,238,246,.95));
+  width:min(320px,88vw);padding:20px 20px 16px;z-index:80;
+  background:linear-gradient(165deg,rgba(255,253,254,.98),rgba(255,238,246,.96));
   border:1px solid rgba(255,255,255,.95);border-radius:18px;
   box-shadow:0 18px 46px rgba(180,60,110,.28), inset 0 0 0 4px rgba(255,255,255,.45);
   text-align:center;opacity:0;visibility:hidden;pointer-events:none;
   transition:opacity .25s ease,transform .25s ease,visibility 0s .25s;
+  font-size:14px;color:#5a3a48;
 }
-#nameBox.show{opacity:1;visibility:visible;pointer-events:auto;
+.panel.show{opacity:1;visibility:visible;pointer-events:auto;
   transform:translate(-50%,-50%) scale(1);transition:opacity .25s ease,transform .25s ease}
-#nameBox .nb-title{font-size:14px;font-weight:700;color:#a02c5b;letter-spacing:.08em}
-#nameInput{
-  margin-top:14px;width:100%;padding:10px 12px;border-radius:12px;font-size:14px;
-  border:1.5px solid #ffc9dd;background:#fff;color:#5a3a48;outline:none;text-align:center;
-  font-family:inherit;
+.panel .p-title{font-weight:800;color:#a02c5b;letter-spacing:.06em;font-size:15px}
+.panel label{display:block;text-align:left;margin-top:12px;font-size:13px;color:#6b4a58;font-weight:700}
+.panel input[type=text],.panel input[type=date]{
+  width:100%;margin-top:5px;padding:9px 11px;border-radius:11px;font-size:14px;
+  border:1.5px solid #ffc9dd;background:#fff;color:#5a3a48;outline:none;
+  font-family:inherit;text-align:center;
 }
-#nameInput:focus{border-color:#ff8fb0;box-shadow:0 0 0 3px rgba(255,143,176,.25)}
-#nameBox .nb-row{margin-top:14px;display:flex;gap:10px;justify-content:center}
-#nameBox button{
+.panel input:focus{border-color:#ff8fb0;box-shadow:0 0 0 3px rgba(255,143,176,.25)}
+.panel .p-check{display:flex;align-items:center;gap:8px;margin-top:12px;font-weight:700;color:#6b4a58}
+.panel .p-check input{width:18px;height:18px}
+.panel .p-row{margin-top:16px;display:flex;gap:10px;justify-content:center}
+.panel button{
   border:none;cursor:pointer;border-radius:999px;padding:9px 18px;font-size:13.5px;font-weight:700;
   font-family:inherit;transition:transform .18s ease,box-shadow .18s ease;
 }
-#nameOk{background:linear-gradient(135deg,#ff7aa8,#e91e63);color:#fff;box-shadow:0 6px 16px rgba(233,30,99,.35)}
-#nameCancel{background:#fff;color:#8b8f95;border:1.5px solid #e3e6ea}
-#nameBox button:hover{transform:translateY(-1px)}
+.panel .ok{background:linear-gradient(135deg,#ff7aa8,#e91e63);color:#fff;box-shadow:0 6px 16px rgba(233,30,99,.35)}
+.panel .cancel{background:#fff;color:#8b8f95;border:1.5px solid #e3e6ea}
+.panel button:hover{transform:translateY(-1px)}
 
 /* ============================================================
-   ✨ 特效层（撒花 / 爱心 / 鱼 / Zzz）
+   ✨ 特效层
    ============================================================ */
 #fx{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:50}
 .fx{position:absolute;left:var(--x);top:var(--y);font-size:var(--fs,16px);line-height:1;
@@ -405,7 +497,7 @@ body.electron #hint{display:none}
   0%{transform:translate(-50%,-50%) scale(.4) rotate(0);opacity:1}
   100%{transform:translate(calc(-50% + var(--tx)),calc(-50% + var(--ty))) scale(1) rotate(var(--rot,220deg));opacity:0}
 }
-.fish{position:absolute;left:var(--x);top:var(--y);font-size:22px;z-index:35;
+.fish{position:absolute;left:var(--x);top:var(--y);font-size:24px;z-index:35;
   animation:fish-in 1s ease-in-out forwards}
 @keyframes fish-in{
   0%{transform:translate(-42px,12px) scale(.4) rotate(-30deg);opacity:0}
@@ -415,22 +507,13 @@ body.electron #hint{display:none}
 }
 .zzz{position:absolute;left:var(--x);top:var(--y);font-size:13px;font-weight:700;color:#8fa8c8;
   animation:zzz-up 2.6s ease-out forwards}
-@keyframes zzz-up{
-  0%{transform:translate(0,0) scale(.6);opacity:0}
-  25%{opacity:1}
-  100%{transform:translate(16px,-46px) scale(1.2);opacity:0}
-}
+@keyframes zzz-up{0%{transform:translate(0,0) scale(.6);opacity:0}25%{opacity:1}100%{transform:translate(16px,-46px) scale(1.2);opacity:0}}
 .chorus{position:absolute;left:var(--x);top:var(--y);font-size:14px;font-weight:700;color:#ff6f9c;
   text-shadow:0 1px 4px rgba(255,255,255,.9);animation:chorus-up 1.1s ease-out forwards}
-@keyframes chorus-up{
-  0%{transform:translate(-50%,0) scale(.6);opacity:0}
-  30%{transform:translate(-50%,-14px) scale(1.1);opacity:1}
-  100%{transform:translate(-50%,-40px) scale(1);opacity:0}
-}
+@keyframes chorus-up{0%{transform:translate(-50%,0) scale(.6);opacity:0}30%{transform:translate(-50%,-14px) scale(1.1);opacity:1}100%{transform:translate(-50%,-40px) scale(1);opacity:0}}
 
-/* 尊重系统"减少动态效果" */
 @media (prefers-reduced-motion:reduce){
-  .penguin,.pet-inner,.head,.face{animation:none !important}
+  .penguin,.pet-inner,.head,.face,.stage3d{animation:none !important}
 }
 </style>
 </head>
@@ -439,55 +522,92 @@ body.electron #hint{display:none}
 <div id="floor"></div>
 <div id="hint">右键企鹅可以互动 · 双击有惊喜 🐧</div>
 
-<!-- 🐧 企鹅 -->
-<div id="pet" class="mood-happy skin-classic facing-right">
+<!-- 🐧 元宵 -->
+<div id="pet" class="mood-happy skin-classic outfit-default facing-right badge-on">
+  <div class="badge" id="badge">
+    <div class="b-time" id="bTime">--:--</div>
+    <div class="b-goal" id="bGoal"></div>
+    <div class="b-sep"></div>
+    <div class="b-bond" id="bBond">💗 --</div>
+  </div>
   <div class="bubble" id="bubble"></div>
   <div class="shadow"></div>
   <div class="flip">
     <div class="pet-inner">
-      <div class="penguin">
-        <div class="foot foot-l"></div>
-        <div class="foot foot-r"></div>
-        <div class="wing wing-l"></div>
-        <div class="wing wing-r"></div>
-        <div class="body"><div class="belly"></div></div>
-        <div class="head">
-          <div class="face">
-            <div class="eye eye-l"><i class="glint"></i><i class="lid"></i></div>
-            <div class="eye eye-r"><i class="glint"></i><i class="lid"></i></div>
-            <div class="blush blush-l"></div>
-            <div class="blush blush-r"></div>
-            <div class="beak"></div>
+      <div class="stage3d">
+        <div class="penguin">
+          <div class="foot foot-l"></div>
+          <div class="foot foot-r"></div>
+          <div class="wing wing-l"></div>
+          <div class="wing wing-r"></div>
+          <div class="bag"></div>
+          <div class="body"><div class="belly"></div></div>
+          <div class="head">
+            <div class="face">
+              <div class="eye eye-l"><i class="glint"></i><i class="glint g2"></i><i class="lid"></i></div>
+              <div class="eye eye-r"><i class="glint"></i><i class="glint g2"></i><i class="lid"></i></div>
+              <div class="blush blush-l"></div>
+              <div class="blush blush-r"></div>
+              <div class="beak"></div>
+              <div class="glasses"><i></i></div>
+              <div class="grass"></div>
+            </div>
           </div>
+          <div class="gloss"></div>
+          <div class="scarf"><i></i></div>
+          <div class="bow"><i></i></div>
+          <div class="hat"></div>
+          <div class="flower-top"></div>
+          <div class="santa"><i></i></div>
+          <div class="crown"></div>
+          <div class="leaf"></div>
+          <div class="redflower"><i></i></div>
         </div>
-        <div class="scarf"><i></i></div>
-        <div class="bow"><i></i></div>
-        <div class="hat"></div>
-        <div class="flower-top"></div>
-        <div class="santa"><i></i></div>
-        <div class="crown"></div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- 🎯 右键菜单 -->
+<!-- 🎯 右键菜单（内环 5 项 + 外环 7 项） -->
 <div id="menu">
-  <button class="item" data-act="feed">🍣<span class="label">喂鱼</span></button>
-  <button class="item" data-act="pat">🤚<span class="label">摸头</span></button>
-  <button class="item" data-act="sleep">😴<span class="label">睡觉 / 起床</span></button>
-  <button class="item" data-act="skin">🎨<span class="label">换皮肤</span></button>
-  <button class="item" data-act="name">✏️<span class="label">改称呼</span></button>
-  <button class="item" data-act="quit" id="quitItem" style="display:none">🚪<span class="label">退出桌宠</span></button>
+  <button class="item ring1" data-act="feed">🍤<span class="label">投喂小鱼干</span></button>
+  <button class="item ring1" data-act="pat">🤚<span class="label">摸摸头</span></button>
+  <button class="item ring1" data-act="play">🎾<span class="label">陪它玩</span></button>
+  <button class="item ring1" data-act="skin">🎨<span class="label">换皮肤</span></button>
+  <button class="item ring1" data-act="outfit">🎒<span class="label">换造型</span></button>
+
+  <button class="item ring2" data-act="sleep">😴<span class="label">睡觉 / 起床</span></button>
+  <button class="item ring2" data-act="name">✏️<span class="label">改称呼</span></button>
+  <button class="item ring2" data-act="clock">⏰<span class="label">时钟 / 倒计时</span></button>
+  <button class="item ring2" data-act="sound">🔊<span class="label">声音大小</span></button>
+  <button class="item ring2" data-act="voice">🗣<span class="label">语音说话</span></button>
+  <button class="item ring2" data-act="bond">💗<span class="label">亲密度</span></button>
+  <button class="item ring2" data-act="quit" id="quitItem" style="display:none">🚪<span class="label">退出桌宠</span></button>
 </div>
 
-<!-- ✏️ 改称呼小面板 -->
-<div id="nameBox">
-  <div class="nb-title">我该怎么称呼你呀？</div>
+<!-- ✏️ 改称呼面板 -->
+<div class="panel" id="nameBox">
+  <div class="p-title">我该怎么称呼你呀？</div>
   <input id="nameInput" type="text" maxlength="12" placeholder="输入名字或昵称（最多 12 字）">
-  <div class="nb-row">
-    <button id="nameOk" type="button">好呀</button>
-    <button id="nameCancel" type="button">以后再说</button>
+  <div class="p-row">
+    <button id="nameOk" class="ok" type="button">好呀</button>
+    <button id="nameCancel" class="cancel" type="button">以后再说</button>
+  </div>
+</div>
+
+<!-- ⏰ 信息牌设置 -->
+<div class="panel" id="clockBox">
+  <div class="p-title">信息牌设置</div>
+  <label>倒计时名称（例如：出发、回家）</label>
+  <input id="goalLabel" type="text" maxlength="8" placeholder="出发">
+  <label>倒计时目标日期</label>
+  <input id="goalDate" type="date">
+  <div class="p-check"><input type="checkbox" id="showTime"><label for="showTime" style="margin:0">显示当前时间</label></div>
+  <div class="p-check"><input type="checkbox" id="showBond"><label for="showBond" style="margin:0">显示亲密度与陪伴时长</label></div>
+  <div class="p-check"><input type="checkbox" id="showBadge"><label for="showBadge" style="margin:0">显示信息牌</label></div>
+  <div class="p-row">
+    <button id="clockOk" class="ok" type="button">保存</button>
+    <button id="clockCancel" class="cancel" type="button">取消</button>
   </div>
 </div>
 
@@ -499,29 +619,33 @@ body.electron #hint{display:none}
 "use strict";
 
 /* ============================================================
-   ⚙️ 可调参数（想改手感就改这里）
+   ⚙️ 可调参数
    ============================================================ */
 var CONFIG = {
-  petW: 96, petH: 118,          // 企鹅尺寸
-  walkSpeed: 52,                // 散步速度（像素/秒）
-  walkSpeedBored: 26,           // 无聊时的速度（变慢）
-  idleMinMs: 15000,             // 两次自主活动的最短间隔
-  idleMaxMs: 40000,             // 最长间隔
-  boredAfterMs: 120000,         // 2 分钟没互动 → 无聊
-  sleepAfterMs: 300000,         // 5 分钟没互动 → 打瞌睡
-  nearRadius: 190,              // 鼠标这个距离内 → 好奇
-  approachRadius: 120,          // 更近 → 主动凑过去
-  approachCooldownMs: 7000,     // 凑过去的冷却
-  bubbleMinMs: 60000,           // 碎碎念最短间隔（1 分钟）
-  bubbleMaxMs: 180000,          // 最长间隔（3 分钟）
-  bubbleShowMs: 4000,           // 气泡停留时间
-  hourlyMs: 3600000,            // 每小时提醒喝水/活动
-  blinkMinMs: 2200,             // 眨眼间隔
+  petW: 96, petH: 118,
+  walkSpeed: 52,
+  walkSpeedBored: 26,
+  idleMinMs: 15000,
+  idleMaxMs: 40000,
+  boredAfterMs: 120000,      // 2 分钟没互动 → 无聊
+  sleepAfterMs: 300000,      // 5 分钟没互动 → 打瞌睡
+  nearRadius: 190,
+  approachRadius: 120,
+  approachCooldownMs: 7000,
+  bubbleMinMs: 60000,
+  bubbleMaxMs: 180000,
+  bubbleShowMs: 4000,
+  hourlyMs: 3600000,
+  blinkMinMs: 2200,
   blinkMaxMs: 5200,
-  happyMax: 10                  // 开心值上限
+  happyMax: 10,
+  patHoldMs: 1000,           // 悬停多久算"摸头"
+  patTooLongMs: 4200,        // 摸太久会傲娇
+  bondMax: 100,
+  petName: "元宵"            // 企鹅自己的名字
 };
 
-/* 💬 台词库（按情绪分组，共 32 句；{name} 会自动替换成你设置的称呼） */
+/* 💬 台词库（{name} 你的称呼，{pet} 企鹅名字） */
 var LINES = {
   happy: [
     "{name}，今天也要加油鸭~",
@@ -532,7 +656,8 @@ var LINES = {
     "{name}今天已经很努力啦，辛苦啦",
     "要不要摸摸我的头？我很好哄的~",
     "你笑一下，我就开心一整天",
-    "{name}，认识你真好呀"
+    "{name}，认识你真好呀",
+    "我叫{pet}，请多关照～"
   ],
   bored: [
     "好无聊哦…陪我说说话嘛🥺",
@@ -562,11 +687,15 @@ var LINES = {
     "深呼吸一下，放松放松~",
     "你已经做得很好了，别太苛责自己",
     "{name}，我一直在你身边哦"
+  ],
+  close: [
+    "{name}，我今天超级超级喜欢你~",
+    "嘿嘿，被你摸头最舒服啦",
+    "今天也谢谢你来陪我呀",
+    "你忙的时候，我就安静地待着～"
   ]
 };
-/* 🎨 十一款皮肤（切换后会自动记住，下次打开还是它）
-   粉系：粉粉腮红 / 樱花蝴蝶结 / 玫瑰粉 / 蜜桃粉 / 棉花糖
-   节日限定：圣诞 / 新年 */
+
 var SKINS = [
   {cls:"skin-classic",   name:"经典黑白"},
   {cls:"skin-blush",     name:"粉粉腮红"},
@@ -580,59 +709,208 @@ var SKINS = [
   {cls:"skin-christmas", name:"🎄圣诞限定"},
   {cls:"skin-newyear",   name:"🎆新年限定"}
 ];
-/* 撒花用的符号（节日限定皮肤会自动换成节日元素） */
+var OUTFITS = [
+  {cls:"outfit-default",  name:"默认款"},
+  {cls:"outfit-study",    name:"学霸款（眼镜+书包）"},
+  {cls:"outfit-lazy",     name:"摸鱼款（树叶+叼草）"},
+  {cls:"outfit-festival", name:"节日款（小红花）"}
+];
+var BONDS = [
+  {min:0,  name:"刚认识",   tip:"我们才刚认识呢～"},
+  {min:20, name:"眼熟啦",   tip:"嘿嘿，我记住你啦！"},
+  {min:40, name:"好朋友",   tip:"我们是好朋友啦～"},
+  {min:60, name:"很亲密",   tip:"我越来越离不开你了…"},
+  {min:80, name:"形影不离", tip:"我们要一直在一起哦！"}
+];
 var FLOWERS = ["🌸","❀","✨","⭐","💮","🌼","💖"];
 var FLOWERS_XMAS = ["❄","🎄","🎁","⭐","✨"];
 var FLOWERS_NY   = ["🎆","🎊","🧧","✨","🏮"];
 
 /* ============================================================
-   🔌 环境判断：浏览器 or Electron
+   🔊 奶萌音效（Web Audio 代码合成，不需要任何音频文件）
+   ============================================================ */
+var Sfx = (function(){
+  var ctx = null, level = 2;   /* 0 静音 1 小 2 中 3 大 */
+  function ready(){
+    try{
+      if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+      if (ctx.state === "suspended") ctx.resume();
+      return ctx;
+    }catch(e){ return null; }
+  }
+  function vol(){ return [0, .05, .12, .22][level] || .12; }
+  function tone(freq, dur, type, delay, glideTo, vibrato){
+    var c = ready(); if (!c || level === 0) return;
+    var t0 = c.currentTime + (delay || 0);
+    var osc = c.createOscillator(), g = c.createGain();
+    osc.type = type || "sine";
+    osc.frequency.setValueAtTime(freq, t0);
+    if (glideTo) osc.frequency.exponentialRampToValueAtTime(glideTo, t0 + dur);
+    if (vibrato){
+      var lfo = c.createOscillator(), lg = c.createGain();
+      lfo.frequency.value = 18; lg.gain.value = vibrato;
+      lfo.connect(lg); lg.connect(osc.frequency); lfo.start(t0); lfo.stop(t0 + dur);
+    }
+    var v = vol();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(v, t0 + Math.min(.04, dur / 3));
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.connect(g); g.connect(c.destination);
+    osc.start(t0); osc.stop(t0 + dur + .02);
+  }
+  function noise(dur, delay){
+    var c = ready(); if (!c || level === 0) return;
+    var t0 = c.currentTime + (delay || 0);
+    var len = Math.max(1, Math.floor(c.sampleRate * dur));
+    var buf = c.createBuffer(1, len, c.sampleRate);
+    var d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    var src = c.createBufferSource(); src.buffer = buf;
+    var f = c.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 700;
+    var g = c.createGain(); g.gain.value = vol() * 1.4;
+    src.connect(f); f.connect(g); g.connect(c.destination);
+    src.start(t0);
+  }
+  return {
+    setLevel: function(l){ level = Math.max(0, Math.min(3, l)); },
+    getLevel: function(){ return level; },
+    levelName: function(){ return ["静音","小声","中声","大声"][level]; },
+    chirp: function(){ tone(880, .13, "sine", 0, 1500); },                       /* 叽～ */
+    squeak: function(){ tone(1150, .12, "triangle", 0, 900, 40); tone(1250, .14, "triangle", .16, 980, 40); }, /* 嘤嘤～ */
+    hum: function(){ tone(980, .18, "sine", 0, 1180, 25); tone(1040, .2, "sine", .2, 1240, 25); tone(1100, .22, "sine", .42, 1300, 25); },
+    eat: function(){ tone(1000, .1, "square", 0, 1400); noise(.09, .12); noise(.09, .3); noise(.08, .48); },
+    sleepyHum: function(){ tone(320, .42, "sine", 0, 240, 12); },               /* 嗯…？ */
+    whine: function(){ tone(720, .38, "sine", 0, 380, 18); },                   /* 呜咽 */
+    levelUp: function(){ tone(660, .12, "triangle", 0); tone(880, .12, "triangle", .14); tone(1180, .2, "triangle", .28); },
+    bell: function(){ tone(1320, .16, "sine", 0, 1320); tone(1760, .22, "sine", .22, 1760); },
+    idleChirp: function(){ tone(760, .1, "sine", 0, 1000, 20); }
+  };
+})();
+
+/* ============================================================
+   🗣 语音说话（系统语音念台词）
+   ============================================================ */
+var Speech = (function(){
+  var on = true, ok = ("speechSynthesis" in window);
+  function speak(text, rate, pitch){
+    if (!on || !ok || !text) return;
+    try{
+      window.speechSynthesis.cancel();
+      var u = new SpeechSynthesisUtterance(String(text).replace(/[～~]/g, "，"));
+      u.lang = "zh-CN"; u.rate = rate || 1.02; u.pitch = pitch || 1.25; u.volume = 1;
+      window.speechSynthesis.speak(u);
+    }catch(e){}
+  }
+  return {
+    speak: speak,
+    toggle: function(){ on = !on; if (!on && ok){ try{ window.speechSynthesis.cancel(); }catch(e){} } return on; },
+    isOn: function(){ return on; },
+    available: ok
+  };
+})();
+
+/* ============================================================
+   🧩 元素与状态
    ============================================================ */
 var isElectron = /Electron/i.test(navigator.userAgent);
 var ipc = null;
-if (isElectron) {
+if (isElectron){
   document.body.classList.add("electron");
-  try { ipc = require("electron").ipcRenderer; } catch (e) { ipc = null; }
+  try { ipc = require("electron").ipcRenderer; } catch(e){ ipc = null; }
 }
 
-/* ============================================================
-   🧩 元素 & 状态
-   ============================================================ */
-var pet    = document.getElementById("pet");
+var pet = document.getElementById("pet");
 var bubble = document.getElementById("bubble");
-var menu   = document.getElementById("menu");
-var fx     = document.getElementById("fx");
+var menu = document.getElementById("menu");
+var fx = document.getElementById("fx");
 var quitItem = document.getElementById("quitItem");
-var items  = Array.prototype.slice.call(menu.querySelectorAll(".item"));
+var nameBox = document.getElementById("nameBox");
+var nameInput = document.getElementById("nameInput");
+var clockBox = document.getElementById("clockBox");
 if (isElectron) quitItem.style.display = "flex";
-var activeItems = items.filter(function(b){ return b.style.display !== "none"; });
 
 var state = {
   x: 0, y: 0,
-  facing: 1,             // 1 朝右，-1 朝左
+  facing: 1,
   mood: "happy",
   happiness: 7,
   lastInteract: Date.now(),
   sleeping: false,
+  manualSleep: false,
   walking: false,
   dragging: false,
   menuOpen: false,
   skinIndex: 0,
-  userName: ""            // 用户设置的称呼（会存进 localStorage）
+  outfitIndex: 0,
+  userName: "",
+  bond: 12,
+  full: 0,
+  grow: 1,
+  phase: "day",
+  todaySeconds: 0,
+  showTime: true,
+  showBond: true,
+  showBadge: true,
+  goalLabel: "出发",
+  goalDate: ""
 };
 var mouse = { x: -9999, y: -9999, dist: 99999 };
 var layout = { xMin: 6, xMax: 100, yMax: 100 };
 var lastApproach = 0;
 
-/* 小工具 */
+function $(id){ return document.getElementById(id); }
 function clamp(v, a, b){ return Math.min(b, Math.max(a, v)); }
 function rand(a, b){ return a + Math.random() * (b - a); }
 function pick(arr){ return arr[Math.floor(Math.random() * arr.length)]; }
+function pad2(n){ return (n < 10 ? "0" : "") + n; }
 function petCenter(){ return { x: state.x + CONFIG.petW / 2, y: state.y + CONFIG.petH * 0.55 }; }
 function addTmp(cls, ms){ pet.classList.add(cls); setTimeout(function(){ pet.classList.remove(cls); }, ms); }
+function LS(k, v){
+  try{
+    if (v === undefined) return localStorage.getItem(k);
+    if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v);
+  }catch(e){ return null; }
+}
+function fill(text){
+  var n = state.userName || "你";
+  return String(text).split("{name}").join(n).split("{pet}").join(CONFIG.petName);
+}
 
 /* ============================================================
-   📐 布局：活动范围随窗口自适应
+   ⏱ 作息生物钟
+   ============================================================ */
+function phaseOfHour(h){
+  if (h >= 8 && h < 18) return "day";
+  if (h >= 18 && h < 22) return "evening";
+  if (h >= 22 || h < 1) return "night";
+  return "deep";
+}
+var zzzSaid = false;
+function updatePhase(){
+  var p = phaseOfHour(new Date().getHours());
+  if (p !== state.phase){
+    state.phase = p;
+    if (p === "night" || p === "deep") enterAutoSleep(p);
+    else if (state.sleeping && !state.manualSleep) wakeUp(true);
+  }
+}
+function enterAutoSleep(p){
+  state.sleeping = true;
+  state.manualSleep = false;
+  pet.classList.add("sleeping");
+  setMood("sleepy");
+  stopWalk();
+  startZzz();
+  if (!zzzSaid){
+    zzzSaid = true;
+    setTimeout(function(){
+      if (state.sleeping) say(p === "deep" ? "（睡得好沉…）Zzz…" : "夜深了，我先睡啦…晚安🌙", 3200);
+    }, 900);
+  }
+}
+
+/* ============================================================
+   📐 布局
    ============================================================ */
 function relayout(){
   var vw = window.innerWidth, vh = window.innerHeight;
@@ -646,13 +924,13 @@ function relayout(){
 }
 function render(){
   pet.style.transform = "translate3d(" + state.x.toFixed(1) + "px," + state.y.toFixed(1) + "px,0)";
+  var c = petCenter();
+  pet.classList.toggle("badge-left", c.x > window.innerWidth - 200);
 }
-function applyFacing(){
-  pet.classList.toggle("facing-left", state.facing < 0);
-}
+function applyFacing(){ pet.classList.toggle("facing-left", state.facing < 0); }
 
 /* ============================================================
-   😊 情绪系统
+   😊 情绪
    ============================================================ */
 function setMood(m){
   if (state.mood === m) return;
@@ -661,11 +939,11 @@ function setMood(m){
   pet.classList.add("mood-" + m);
 }
 function updateMood(){
-  if (state.sleeping) { setMood("sleepy"); return; }
+  if (state.sleeping){ setMood("sleepy"); return; }
   var idle = Date.now() - state.lastInteract;
-  if (mouse.dist < CONFIG.nearRadius) { setMood("curious"); return; }  // 鼠标靠近 → 立刻精神
-  if (idle > CONFIG.sleepAfterMs)     { setMood("sleepy");  return; }  // 5 分钟 → 打瞌睡
-  if (idle > CONFIG.boredAfterMs)     { setMood("bored");   return; }  // 2 分钟 → 无聊
+  if (mouse.dist < CONFIG.nearRadius){ setMood("curious"); return; }
+  if (idle > CONFIG.sleepAfterMs){ setMood("sleepy"); return; }
+  if (idle > CONFIG.boredAfterMs || (state.phase === "evening" && idle > 40000)){ setMood("bored"); return; }
   setMood("happy");
 }
 function touchInteraction(boost){
@@ -674,21 +952,82 @@ function touchInteraction(boost){
   updateMood();
 }
 
-/* 主循环：情绪 / 开心值衰减 / 睡眠判定 */
-var lastTick = Date.now();
-setInterval(function(){
-  var now = Date.now(), dt = now - lastTick; lastTick = now;
-  var idle = now - state.lastInteract;
-  if (idle > 45000) state.happiness = Math.max(0, state.happiness - dt / 60000); // 每分钟 -1
-  updateMood();
-}, 250);
+/* ============================================================
+   💗 亲密度
+   ============================================================ */
+function bondLevel(){
+  var lv = BONDS[0];
+  for (var i = 0; i < BONDS.length; i++){ if (state.bond >= BONDS[i].min) lv = BONDS[i]; }
+  return lv;
+}
+function addBond(n){
+  var before = bondLevel().name;
+  state.bond = clamp(state.bond + n, 0, CONFIG.bondMax);
+  LS("petBond", String(Math.round(state.bond)));
+  var after = bondLevel().name;
+  if (after !== before){
+    addTmp("levelup", 950);
+    hearts(petCenter().x, state.y + 6, 7);
+    burst(petCenter().x, state.y + 30, 12);
+    Sfx.levelUp();
+    say("我们的关系升级啦：<b>" + after + "</b>！" + bondLevel().tip, 4200, false, true);
+  }
+  updateBadge();
+}
 
 /* ============================================================
-   👀 眼神跟随 + 歪头 + 靠近反应
+   ⏰ 信息牌
    ============================================================ */
+function fmtDuration(sec){
+  var h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60);
+  if (h > 0) return h + " 小时 " + m + " 分";
+  return m + " 分";
+}
+function updateBadge(){
+  var now = new Date();
+  var tEl = $("bTime");
+  tEl.textContent = state.showTime ? (pad2(now.getHours()) + ":" + pad2(now.getMinutes())) : "";
+  tEl.style.display = state.showTime ? "" : "none";
+
+  var g = "";
+  if (state.goalDate){
+    var target = new Date(state.goalDate + "T00:00:00");
+    var today = new Date(); today.setHours(0, 0, 0, 0);
+    var days = Math.round((target.getTime() - today.getTime()) / 86400000);
+    if (days > 0) g = "距" + state.goalLabel + "还有 " + days + " 天";
+    else if (days === 0) g = "今天就是" + state.goalLabel + "啦！";
+    else g = state.goalLabel + "已过去 " + (-days) + " 天";
+  }
+  var gEl = $("bGoal");
+  gEl.textContent = g;
+  gEl.style.display = g ? "" : "none";
+
+  var bEl = $("bBond"), sep = document.querySelector(".badge .b-sep");
+  if (state.showBond){
+    bEl.innerHTML = "💗 " + bondLevel().name + " · 今天陪你 " + fmtDuration(state.todaySeconds);
+    bEl.style.display = ""; sep.style.display = "";
+  } else {
+    bEl.style.display = "none"; sep.style.display = "none";
+  }
+  pet.classList.toggle("badge-on", !!(state.showBadge && (state.showTime || state.showBond || g)));
+}
+function tickCompanion(){
+  var today = new Date().toISOString().slice(0, 10);
+  var rec = { date: today, sec: 0 };
+  try { rec = JSON.parse(LS("petCompanion") || "{}") || rec; } catch(e){}
+  if (rec.date !== today) rec = { date: today, sec: 0 };
+  rec.sec += 1;
+  state.todaySeconds = rec.sec;
+  LS("petCompanion", JSON.stringify(rec));
+}
+
+/* ============================================================
+   👀 眼神 / 3D 跟随 / 摸头杀
+   ============================================================ */
+var patTimer = null, patStart = 0, patting = false, shyUntil = 0;
 function updateEyes(){
   var c = petCenter();
-  var hx = c.x, hy = state.y + 34;             // 头部中心
+  var hx = c.x, hy = state.y + 34;
   var dx = mouse.x - hx, dy = mouse.y - hy;
   var d = Math.sqrt(dx * dx + dy * dy) || 1;
   var max = 3.2;
@@ -696,42 +1035,76 @@ function updateEyes(){
   pet.style.setProperty("--ey", clamp(dy / d * max, -max, max).toFixed(2) + "px");
   var tilt = mouse.dist < CONFIG.nearRadius * 1.7 ? clamp(dx / 70, -11, 11) : 0;
   pet.style.setProperty("--tilt", tilt.toFixed(1) + "deg");
+  pet.style.setProperty("--ry", clamp(dx / 26, -15, 15).toFixed(1) + "deg");
+  pet.style.setProperty("--rx", clamp(-dy / 34, -9, 9).toFixed(1) + "deg");
+  pet.style.setProperty("--gx", clamp(dx / 22, -7, 7).toFixed(1) + "px");
+  pet.style.setProperty("--gy", clamp(dy / 26, -6, 6).toFixed(1) + "px");
   pet.classList.toggle("near-mouse", mouse.dist < CONFIG.nearRadius);
 }
-/* 主动凑过去一点 */
-function maybeApproach(){
-  var now = Date.now();
-  if (state.sleeping || state.dragging || state.walking || state.menuOpen) return;
-  if (mouse.dist > CONFIG.approachRadius) return;
-  if (now - lastApproach < CONFIG.approachCooldownMs) return;
-  lastApproach = now;
+function overHead(){
   var c = petCenter();
-  var target = state.x + (mouse.x > c.x ? 34 : -34);
-  walkTo(target, null, true);
+  return Math.abs(mouse.x - c.x) < 42 && mouse.y > state.y - 12 && mouse.y < state.y + 46;
+}
+function checkPat(){
+  if (!overHead() || state.dragging || state.menuOpen || state.sleeping){ endPat(); return; }
+  if (!patStart){
+    patStart = Date.now();
+    patTimer = setTimeout(beginPat, CONFIG.patHoldMs);
+    return;
+  }
+  if (patting && Date.now() - patStart > CONFIG.patTooLongMs && Date.now() > shyUntil){
+    shyUntil = Date.now() + 4200;
+    pet.classList.add("shy-turn");
+    say("……哼，摸够了没有呀～", 2200, false, true);
+    setTimeout(function(){ pet.classList.remove("shy-turn"); }, 2600);
+    endPat();
+  }
+}
+function beginPat(){
+  if (patting) return;
+  patting = true;
+  pet.classList.add("patting");
+  pet.style.setProperty("--pat-lean", (mouse.x > petCenter().x ? 4 : -4) + "deg");
+  hearts(petCenter().x, state.y + 2, 4);
+  say("嘿嘿～好舒服…", 2400, false, true);
+  Sfx.hum();
+  touchInteraction(true);
+  addBond(2);
+}
+function endPat(){
+  if (patTimer){ clearTimeout(patTimer); patTimer = null; }
+  if (patting){
+    patting = false;
+    pet.classList.remove("patting");
+    pet.style.setProperty("--pat-lean", "0deg");
+    shyUntil = Date.now() + 1500;
+  }
+  patStart = 0;
 }
 
 /* ============================================================
-   📍 位置与穿透（Electron：只有悬停企鹅/菜单时才接管鼠标）
+   📍 鼠标穿透（Electron）
    ============================================================ */
 var ignoring = null;
 function setIgnore(v){
   if (!isElectron || !ipc) return;
   if (ignoring === v) return;
   ignoring = v;
-  try { ipc.send("pet-mouse", v); } catch (e) {}
+  try { ipc.send("pet-mouse", v); } catch(e){}
   if (v && state.menuOpen) closeMenu();
 }
+function menuRadius(){ return window.innerWidth < 520 ? 96 : 132; }
 function isOverInteractive(x, y){
   if (state.dragging) return true;
   var c = petCenter();
-  if (Math.abs(x - c.x) < CONFIG.petW * 0.8 && y > state.y - 18 && y < state.y + CONFIG.petH + 14) return true;
+  if (Math.abs(x - c.x) < CONFIG.petW * 0.85 && y > state.y - 20 && y < state.y + CONFIG.petH + 14) return true;
   if (state.menuOpen){
     var mx = parseFloat(menu.style.left || "0"), my = parseFloat(menu.style.top || "0");
-    if (Math.sqrt((x - mx) * (x - mx) + (y - my) * (y - my)) < 84 + 46) return true;
+    if (Math.sqrt((x - mx) * (x - mx) + (y - my) * (y - my)) < menuRadius() + 60) return true;
   }
+  if (nameBox.classList.contains("show") || clockBox.classList.contains("show")) return true;
   return false;
 }
-
 window.addEventListener("pointermove", function(e){
   mouse.x = e.clientX; mouse.y = e.clientY;
   var c = petCenter();
@@ -740,25 +1113,35 @@ window.addEventListener("pointermove", function(e){
   if (state.dragging) dragMove(e);
   updateEyes();
   maybeApproach();
+  checkPat();
 });
-window.addEventListener("pointerleave", function(){ setIgnore(true); });
-window.addEventListener("blur", function(){ setIgnore(true); });
+window.addEventListener("pointerleave", function(){ setIgnore(true); endPat(); });
+window.addEventListener("blur", function(){ setIgnore(true); endPat(); });
+
+function maybeApproach(){
+  var now = Date.now();
+  if (state.sleeping || state.dragging || state.walking || state.menuOpen || patting) return;
+  if (mouse.dist > CONFIG.approachRadius) return;
+  if (now - lastApproach < CONFIG.approachCooldownMs) return;
+  lastApproach = now;
+  var c = petCenter();
+  walkTo(state.x + (mouse.x > c.x ? 34 : -34), null, true);
+}
 
 /* ============================================================
-   🖱️ 点击 / 拖拽 / 双击
+   🖱️ 点击 / 拖拽 / 双击盲盒
    ============================================================ */
 var drag = { active: false, sx: 0, sy: 0, px: 0, py: 0, moved: 0, t: 0, lastX: 0 };
 
 pet.addEventListener("pointerdown", function(e){
-  if (e.button !== 0) return;           // 右键走菜单
+  if (e.button !== 0) return;
   closeMenu();
   drag.active = true; state.dragging = true; drag.moved = 0; drag.t = Date.now();
   drag.sx = e.clientX; drag.sy = e.clientY;
-  drag.px = state.x;   drag.py = state.y;
-  drag.lastX = e.clientX;
+  drag.px = state.x; drag.py = state.y; drag.lastX = e.clientX;
   pet.classList.add("dragging");
   pet.style.transition = "none";
-  try { pet.setPointerCapture(e.pointerId); } catch (err) {}
+  try { pet.setPointerCapture(e.pointerId); } catch(err){}
   stopWalk();
   touchInteraction(false);
 });
@@ -769,7 +1152,7 @@ function dragMove(e){
   state.y = clamp(drag.py + dy, 10, window.innerHeight - CONFIG.petH * 0.6);
   var vx = e.clientX - drag.lastX; drag.lastX = e.clientX;
   pet.style.setProperty("--drag-tilt", clamp(vx * 1.6, -16, 16).toFixed(1) + "deg");
-  if (Math.abs(dx) > 4) { state.facing = dx > 0 ? 1 : -1; applyFacing(); }
+  if (Math.abs(dx) > 4){ state.facing = dx > 0 ? 1 : -1; applyFacing(); }
   render();
 }
 window.addEventListener("pointerup", function(){
@@ -778,66 +1161,108 @@ window.addEventListener("pointerup", function(){
   state.dragging = false;
   pet.classList.remove("dragging");
   pet.style.removeProperty("--drag-tilt");
-  /* 松手：落回地面站稳，再左右晃一下恢复平衡 */
   pet.style.transition = "transform .35s cubic-bezier(.3,1.2,.5,1)";
-  state.x = clamp(state.x, layout.xMin, layout.xMax); // 拖到屏幕外也拉回来
+  state.x = clamp(state.x, layout.xMin, layout.xMax);
   state.y = layout.yMax;
   render();
   setTimeout(function(){ pet.style.transition = ""; }, 380);
   addTmp("wobble", 900);
   touchInteraction(true);
+  addBond(1);
+  Sfx.chirp();
 });
 
-/* 单击：缩一下 → 开心扑腾 → "啾~" */
 pet.addEventListener("click", function(e){
-  if (drag.moved > 6) return;           // 刚才是拖拽，不算点击
-  if (e.detail !== 1) return;           // 双击交给 dblclick
+  if (drag.moved > 6) return;
+  if (e.detail !== 1) return;
   clickReact();
 });
 function clickReact(){
+  if (state.sleeping){
+    if (state.phase === "deep"){
+      say("Zzz…（睡得好沉，右键才能叫醒我）", 2600);
+      return;
+    }
+    pet.classList.add("one-eye");
+    Sfx.sleepyHum();
+    say("嗯…？让我再睡一会儿嘛…", 2400, false, true);
+    setTimeout(function(){ pet.classList.remove("one-eye"); }, 2600);
+    return;
+  }
   touchInteraction(true);
+  addBond(2);
   addTmp("squish", 240);
   setTimeout(function(){ addTmp("flap", 900); }, 180);
   var c = petCenter();
   chorus("啾~", c.x + (state.facing > 0 ? 44 : -44), state.y + 20);
   hearts(c.x, state.y + 4, 3);
+  Sfx.chirp();
+  var line = pick(LINES.happy);
+  say(line, 3000, false, true);
 }
 
-/* 双击：跳起来转一圈 + 撒花 + 害羞 */
 pet.addEventListener("dblclick", function(e){
   e.preventDefault();
-  easterEgg();
+  blindBox();
 });
-function easterEgg(){
+function blindBox(){
   touchInteraction(true);
-  addTmp("jumping", 980);
+  addBond(3);
   var c = petCenter();
-  setTimeout(function(){ burst(c.x, state.y + 30, 14); }, 180);
-  setTimeout(function(){ addTmp("shy", 1400); }, 620);
-  say("嘿嘿…被你发现啦~", 2600);
+  var roll = Math.random();
+  if (roll < 0.34){
+    addTmp("dbl-jump", 950);
+    setTimeout(function(){ burst(c.x, state.y + 26, 8); }, 160);
+    say(pick(["嘿嘿！我跳得高不高～", "开心！", "我今天心情超好~"]), 2600, false, true);
+  } else if (roll < 0.66){
+    addTmp("dbl-spin", 1100);
+    setTimeout(function(){ hearts(c.x, state.y + 6, 6); }, 300);
+    say(pick(["转圈圈给你看～", "看我看我！", "有点害羞…"]), 2600, false, true);
+  } else if (roll < 0.9){
+    addTmp("dbl-doze", 2450);
+    setTimeout(function(){ spawnZzz(c.x + 22, state.y + 14); }, 500);
+    say(pick(["呼…我装睡啦，别吵我～", "Zzz…（偷偷看你）", "就眯一小会儿…"]), 2600, false, true);
+  } else {
+    addTmp("dbl-wow", 750);
+    var mk = document.createElement("div");
+    mk.className = "wowmark"; mk.textContent = "!";
+    pet.appendChild(mk);
+    setTimeout(function(){ if (mk.parentNode) mk.parentNode.removeChild(mk); }, 1300);
+    say(pick(["诶！你吓我一跳～", "怎么啦怎么啦？", "我突然想起来…该喝水啦！", "哇，你今天真好看"]), 3200, false, true);
+  }
+  Sfx.squeak();
 }
 
 /* ============================================================
-   🎯 右键圆形菜单
+   🎯 右键双环菜单
    ============================================================ */
+var items = Array.prototype.slice.call(menu.querySelectorAll(".item"));
+var activeItems = items.filter(function(b){ return b.style.display !== "none"; });
 function layoutMenuItems(){
-  var n = activeItems.length, r = 84;
-  var a0 = -168, a1 = -12;
-  activeItems.forEach(function(btn, i){
-    var deg = (n === 1) ? -90 : (a0 + (a1 - a0) * i / (n - 1));
-    var a = deg * Math.PI / 180;
-    btn.style.left = (Math.cos(a) * r).toFixed(1) + "px";
-    btn.style.top  = (Math.sin(a) * r).toFixed(1) + "px";
-  });
+  var r1 = menuRadius(), r2 = menuRadius() + 50;
+  var ring1 = activeItems.filter(function(b){ return b.classList.contains("ring1"); });
+  var ring2 = activeItems.filter(function(b){ return b.classList.contains("ring2"); });
+  function place(list, r, a0, a1){
+    var n = list.length;
+    list.forEach(function(btn, i){
+      var deg = (n === 1) ? (a0 + a1) / 2 : (a0 + (a1 - a0) * i / (n - 1));
+      var a = deg * Math.PI / 180;
+      btn.style.left = (Math.cos(a) * r).toFixed(1) + "px";
+      btn.style.top = (Math.sin(a) * r).toFixed(1) + "px";
+    });
+  }
+  place(ring1, r1, -168, -12);
+  place(ring2, r2, -188, 8);
 }
 function openMenu(){
   var c = petCenter();
   menu.style.left = c.x + "px";
-  menu.style.top  = (c.y - 4) + "px";
+  menu.style.top = (c.y - 4) + "px";
   layoutMenuItems();
-  activeItems.forEach(function(btn, i){ btn.style.transitionDelay = (i * 45) + "ms"; });
+  activeItems.forEach(function(btn, i){ btn.style.transitionDelay = (i * 40) + "ms"; });
   menu.classList.add("open");
   state.menuOpen = true;
+  Sfx.chirp();
   touchInteraction(false);
 }
 function closeMenu(){
@@ -853,137 +1278,260 @@ pet.addEventListener("contextmenu", function(e){
 document.addEventListener("contextmenu", function(e){ e.preventDefault(); });
 document.addEventListener("pointerdown", function(e){
   if (state.menuOpen && !e.target.closest("#menu") && !e.target.closest("#pet")) closeMenu();
-  if (e.target.closest && !e.target.closest("#nameBox") && !e.target.closest("#menu")) closeNameBox();
+  if (e.target.closest && !e.target.closest(".panel") && !e.target.closest("#menu")) closePanels();
 });
-window.addEventListener("keydown", function(e){ if (e.key === "Escape") closeMenu(); });
+window.addEventListener("keydown", function(e){ if (e.key === "Escape"){ closeMenu(); closePanels(); } });
 
 menu.addEventListener("click", function(e){
   var btn = e.target.closest(".item");
   if (!btn) return;
   var act = btn.getAttribute("data-act");
   closeMenu();
-  if (act === "feed")  actionFeed();
-  if (act === "pat")   actionPat();
-  if (act === "sleep") actionSleep();
-  if (act === "skin")  actionSkin();
-  if (act === "name")  openNameBox();
-  if (act === "quit"){ if (ipc) ipc.send("pet-quit"); }
+  if (act === "feed")   actionFeed();
+  if (act === "pat")    actionPat();
+  if (act === "play")   actionPlay();
+  if (act === "skin")   actionSkin();
+  if (act === "outfit") actionOutfit();
+  if (act === "sleep")  actionSleep();
+  if (act === "name")   openNameBox();
+  if (act === "clock")  openClockBox();
+  if (act === "sound")  cycleSound();
+  if (act === "voice")  toggleVoice();
+  if (act === "bond")   actionBond();
+  if (act === "quit" && ipc) ipc.send("pet-quit");
 });
 
 /* ============================================================
-   ✏️ 改称呼：让企鹅叫你的名字
+   🖱 面板
    ============================================================ */
-var nameBox = document.getElementById("nameBox");
-var nameInput = document.getElementById("nameInput");
+function closePanels(){ nameBox.classList.remove("show"); clockBox.classList.remove("show"); }
 function openNameBox(){
   nameInput.value = state.userName || "";
+  closePanels();
   nameBox.classList.add("show");
-  setTimeout(function(){ try { nameInput.focus(); } catch (e) {} }, 120);
+  setTimeout(function(){ try { nameInput.focus(); } catch(e){} }, 120);
   touchInteraction(false);
 }
-function closeNameBox(){ nameBox.classList.remove("show"); }
 function saveName(){
   var v = (nameInput.value || "").trim().slice(0, 12);
   state.userName = v;
-  try { localStorage.setItem("petUserName", v); } catch (e) {}
-  closeNameBox();
-  if (v) say("记住啦，" + v + "！以后我就这么叫你~", 3000);
-  else   say("好呀，那我就先喊你「你」啦~", 2600);
+  LS("petUserName", v);
+  closePanels();
+  if (v){ say("记住啦，" + v + "！以后我就这么叫你~", 3000, false, true); }
+  else { say("好呀，那我就先喊你「你」啦~", 2600); }
   addTmp("flap", 800);
   touchInteraction(true);
+  addBond(2);
 }
-document.getElementById("nameOk").addEventListener("click", saveName);
-document.getElementById("nameCancel").addEventListener("click", closeNameBox);
+$("nameOk").addEventListener("click", saveName);
+$("nameCancel").addEventListener("click", closePanels);
 nameInput.addEventListener("keydown", function(e){
   if (e.key === "Enter") saveName();
-  if (e.key === "Escape") closeNameBox();
+  if (e.key === "Escape") closePanels();
 });
 
+function openClockBox(){
+  $("goalLabel").value = state.goalLabel || "出发";
+  $("goalDate").value = state.goalDate || "";
+  $("showTime").checked = !!state.showTime;
+  $("showBond").checked = !!state.showBond;
+  $("showBadge").checked = !!state.showBadge;
+  closePanels();
+  clockBox.classList.add("show");
+  touchInteraction(false);
+}
+$("clockOk").addEventListener("click", function(){
+  state.goalLabel = ($("goalLabel").value || "出发").slice(0, 8);
+  state.goalDate = $("goalDate").value || "";
+  state.showTime = $("showTime").checked;
+  state.showBond = $("showBond").checked;
+  state.showBadge = $("showBadge").checked;
+  LS("petGoalLabel", state.goalLabel);
+  LS("petGoalDate", state.goalDate);
+  LS("petShowTime", state.showTime ? "1" : "0");
+  LS("petShowBond", state.showBond ? "1" : "0");
+  LS("petShowBadge", state.showBadge ? "1" : "0");
+  closePanels();
+  updateBadge();
+  say(state.goalDate ? ("记住啦！我会帮你数着" + state.goalLabel + "的日子~") : "信息牌设置好啦~", 2600);
+  addBond(1);
+});
+$("clockCancel").addEventListener("click", closePanels);
+
 /* ============================================================
-   🍣 四种互动动作
+   🎮 互动动作
    ============================================================ */
 function actionFeed(){
   touchInteraction(true);
+  if (state.full >= 8){
+    addTmp("toofull", 1300);
+    Sfx.whine();
+    say("呜…吃不下了啦，肚子圆滚滚的", 2600, false, true);
+    return;
+  }
+  Sfx.eat();
   pet.classList.add("eating");
   var c = petCenter();
   spawnFish(c.x + (state.facing > 0 ? 30 : -30), state.y + 44);
+  state.full = Math.min(8, state.full + 1);
+  state.grow = 1 + state.full * 0.022;
+  LS("petFull", String(state.full));
+  applyGrow();
+  addBond(2);
   setTimeout(function(){
     pet.classList.remove("eating");
     addTmp("flap", 900);
-    say("好好吃！谢谢你~", 2400);
+    var msg = state.full >= 8 ? "吃得好饱…我变圆了！" : "小鱼干好好吃！谢谢你~";
+    say(msg, 2600, false, true);
+    hearts(petCenter().x, state.y + 6, 3);
   }, 1000);
 }
 function actionPat(){
   touchInteraction(true);
+  addBond(2);
+  Sfx.hum();
   pet.classList.add("enjoying");
   hearts(petCenter().x, state.y + 4, 6);
-  say("嘿嘿…好舒服~", 2200);
+  say("嘿嘿…好舒服~", 2200, false, true);
   setTimeout(function(){ pet.classList.remove("enjoying"); }, 1800);
 }
-var zzzTimer = null;
-function actionSleep(){
-  state.sleeping = !state.sleeping;
-  pet.classList.toggle("sleeping", state.sleeping);
-  if (state.sleeping){
-    stopWalk();
-    setMood("sleepy");
-    say("晚安…💤", 2600);
-    zzzTimer = setInterval(function(){
-      var c = petCenter();
-      spawnZzz(c.x + 26, state.y + 10);
-    }, 1700);
-  } else {
-    clearInterval(zzzTimer); zzzTimer = null;
-    state.lastInteract = Date.now();
-    setMood("curious");
-    addTmp("flap", 700);
-    say("我醒啦！", 2000);
-  }
+function actionPlay(){
+  touchInteraction(true);
+  addBond(3);
+  var c = petCenter();
+  var ball = document.createElement("span");
+  ball.className = "fx";
+  ball.textContent = "🎾";
+  ball.style.setProperty("--x", (c.x + rand(-60, 60)).toFixed(0) + "px");
+  ball.style.setProperty("--y", (state.y + 30) + "px");
+  ball.style.setProperty("--tx", rand(-90, 90).toFixed(0) + "px");
+  ball.style.setProperty("--ty", rand(-70, -30).toFixed(0) + "px");
+  ball.style.setProperty("--fs", "20px");
+  ball.style.setProperty("--dur", "1.1s");
+  fx.appendChild(ball);
+  setTimeout(function(){ if (ball.parentNode) ball.parentNode.removeChild(ball); }, 1400);
+  addTmp("dbl-jump", 900);
+  Sfx.squeak();
+  say(pick(["球球！我要玩！", "接住你啦～", "再玩一次好不好嘛"]), 2600, false, true);
+  setTimeout(function(){ walkTo(rand(layout.xMin, layout.xMax), null, false); }, 700);
 }
 function actionSkin(){
-  applySkin(state.skinIndex + 1);
-  say("换好啦！这是「" + SKINS[state.skinIndex].name + "」（共 " + SKINS.length + " 款）", 2600);
+  state.skinIndex = (state.skinIndex + 1) % SKINS.length;
+  addTmp("swapping", 1000);
+  setTimeout(function(){
+    applySkin(state.skinIndex);
+    say("换好啦！这是「" + SKINS[state.skinIndex].name + "」（共 " + SKINS.length + " 款）", 2600, false, true);
+  }, 420);
+  addBond(1);
+  touchInteraction(false);
+  Sfx.chirp();
+}
+function actionOutfit(){
+  state.outfitIndex = (state.outfitIndex + 1) % OUTFITS.length;
+  addTmp("swapping", 1000);
+  setTimeout(function(){
+    applyOutfit(state.outfitIndex);
+    say("换装完成：「" + OUTFITS[state.outfitIndex].name + "」", 2600, false, true);
+    burst(petCenter().x, state.y + 40, 8);
+  }, 420);
+  addBond(1);
   touchInteraction(false);
 }
-/* 应用皮肤（自动记住选择，下次打开还是这款） */
-function applySkin(i){
-  state.skinIndex = ((i % SKINS.length) + SKINS.length) % SKINS.length;
-  SKINS.forEach(function(s){ pet.classList.remove(s.cls); });
-  pet.classList.add(SKINS[state.skinIndex].cls);
-  try { localStorage.setItem("petSkinIndex", String(state.skinIndex)); } catch (e) {}
+var zzzTimer = null;
+function startZzz(){
+  if (zzzTimer) return;
+  zzzTimer = setInterval(function(){
+    if (!state.sleeping) return;
+    var c = petCenter();
+    spawnZzz(c.x + 26, state.y + 10);
+  }, 1700);
+}
+function stopZzz(){ clearInterval(zzzTimer); zzzTimer = null; }
+function actionSleep(){
+  if (state.sleeping){
+    wakeUp(false);
+  } else {
+    state.sleeping = true;
+    state.manualSleep = true;
+    pet.classList.add("sleeping");
+    stopWalk();
+    setMood("sleepy");
+    startZzz();
+    Sfx.sleepyHum();
+    say("晚安…💤", 2600, false, true);
+  }
+  touchInteraction(false);
+}
+function wakeUp(silent){
+  state.sleeping = false;
+  state.manualSleep = false;
+  pet.classList.remove("sleeping", "one-eye");
+  stopZzz();
+  state.lastInteract = Date.now();
+  setMood("curious");
+  if (!silent){
+    addTmp("flap", 700);
+    Sfx.chirp();
+    say("我醒啦！", 2000, false, true);
+  }
+  zzzSaid = false;
+}
+function cycleSound(){
+  var l = (Sfx.getLevel() + 1) % 4;
+  Sfx.setLevel(l);
+  LS("petSoundLevel", String(l));
+  say("声音：" + Sfx.levelName() + (l === 0 ? "（已静音）" : ""), 2200);
+  if (l > 0) Sfx.bell();
+}
+function toggleVoice(){
+  var on = Speech.toggle();
+  LS("petVoice", on ? "1" : "0");
+  say(on ? "语音已开启，我会说话了~" : "语音已关闭（安静模式）", 2400);
+  if (on) Speech.speak("语音已经开启啦");
+}
+function actionBond(){
+  var lv = bondLevel();
+  say("💗 亲密度 " + Math.round(state.bond) + "/100 · <b>" + lv.name + "</b><br>今天已经陪你 " + fmtDuration(state.todaySeconds) + " 啦～", 4800, false, true);
+  hearts(petCenter().x, state.y + 4, 5);
+  addBond(1);
 }
 
 /* ============================================================
-   🚶 随机散步 AI
+   🚶 散步 AI
    ============================================================ */
 var actionTimer = null;
 function scheduleAction(){
   clearTimeout(actionTimer);
   actionTimer = setTimeout(doRandomAction, rand(CONFIG.idleMinMs, CONFIG.idleMaxMs));
 }
+function phaseSpeed(){
+  if (state.phase === "evening") return 0.68;
+  if (state.phase === "night" || state.phase === "deep") return 0;
+  return 1;
+}
 function doRandomAction(){
-  if (state.sleeping || state.dragging || state.menuOpen || state.walking){
+  if (state.sleeping || state.dragging || state.menuOpen || state.walking || patting){
     scheduleAction(); return;
   }
-  var act = pick(["walk","walk","walk","look","sit","preen","idle"]);
-  if (act === "walk"){
-    walkTo(rand(layout.xMin, layout.xMax), null, false);
-  } else if (act === "look"){
-    addTmp("looking", 1750);
-  } else if (act === "sit"){
-    addTmp("sitting", 4200);
-  } else if (act === "preen"){
-    addTmp("preening", 2200);
-  }
+  var pool = (state.mood === "bored")
+    ? ["look", "sit", "preen", "idle", "walk"]
+    : ["walk","walk","walk","look","sit","preen","idle"];
+  var act = pick(pool);
+  if (act === "walk") walkTo(rand(layout.xMin, layout.xMax), null, false);
+  else if (act === "look") addTmp("looking", 1750);
+  else if (act === "sit") addTmp("sitting", 4200);
+  else if (act === "preen") addTmp("preening", 2200);
+  if (state.phase === "evening" && Math.random() < 0.3) addTmp("yawning", 2500);
   scheduleAction();
 }
 function stopWalk(){
   state.walking = false;
   pet.classList.remove("walking", "looking");
 }
-/* 走向目标点；short=true 表示"凑过去"的短距离移动 */
 function walkTo(targetX, cb, short){
   if (state.sleeping) return;
+  var mult = phaseSpeed();
+  if (mult === 0) return;
   targetX = clamp(targetX, layout.xMin, layout.xMax);
   var dist = Math.abs(targetX - state.x);
   if (dist < 18){ if (cb) cb(); return; }
@@ -991,15 +1539,12 @@ function walkTo(targetX, cb, short){
   applyFacing();
   state.walking = true;
   pet.classList.add("walking");
-  var speed = (state.mood === "bored" ? CONFIG.walkSpeedBored : CONFIG.walkSpeed);
+  var speed = (state.mood === "bored" ? CONFIG.walkSpeedBored : CONFIG.walkSpeed) * mult;
   if (short) speed *= 0.85;
-  var last = performance.now();
-  var pauseUntil = 0;
-  var edgeTurnBudget = 0;
+  var last = performance.now(), pauseUntil = 0, edgeTurnBudget = 0;
   function step(now){
     if (!state.walking) return;
     var dt = Math.min(0.05, (now - last) / 1000); last = now;
-    /* 走几步停一下，东张西望 */
     if (now > pauseUntil){
       state.x += state.facing * speed * dt;
       if (Math.random() < 0.012){
@@ -1008,7 +1553,6 @@ function walkTo(targetX, cb, short){
         setTimeout(function(){ if (state.walking) pet.classList.remove("looking"); }, 950);
       }
     }
-    /* 撞到窗口边缘 → 自动转身往回走 */
     if (state.x <= layout.xMin || state.x >= layout.xMax){
       state.x = clamp(state.x, layout.xMin, layout.xMax);
       if (edgeTurnBudget === 0){
@@ -1018,11 +1562,7 @@ function walkTo(targetX, cb, short){
       }
     }
     var arrived = (state.facing > 0 && state.x >= targetX) || (state.facing < 0 && state.x <= targetX);
-    if (arrived){
-      stopWalk(); render();
-      if (cb) cb();
-      return;
-    }
+    if (arrived){ stopWalk(); render(); if (cb) cb(); return; }
     render();
     requestAnimationFrame(step);
   }
@@ -1030,18 +1570,12 @@ function walkTo(targetX, cb, short){
 }
 
 /* ============================================================
-   💬 气泡碎碎念 + 每小时提醒
+   💬 气泡 / 碎碎念 / 整点提醒
    ============================================================ */
-var sayTimer = null, talkTimer = null;
-/* 把台词里的 {name} 换成用户设置的称呼 */
-function fillName(text){
-  var n = state.userName || "你";
-  return String(text).split("{name}").join(n);
-}
-function say(text, ms, big){
-  bubble.textContent = fillName(text);
+var sayTimer = null, talkTimer = null, lastSpoke = 0;
+function say(text, ms, big, speakIt){
+  bubble.innerHTML = fill(text);
   bubble.classList.toggle("big", !!big);
-  /* 靠边时气泡往回收，避免超出窗口 */
   var c = petCenter(), off = 0;
   if (c.x < 105) off = 105 - c.x;
   if (c.x > window.innerWidth - 105) off = (window.innerWidth - 105) - c.x;
@@ -1049,11 +1583,17 @@ function say(text, ms, big){
   bubble.classList.add("show");
   clearTimeout(sayTimer);
   sayTimer = setTimeout(function(){ bubble.classList.remove("show"); }, ms || CONFIG.bubbleShowMs);
+  var now = Date.now();
+  if (!state.sleeping && (speakIt || (now - lastSpoke > 25000 && Math.random() < 0.45))){
+    lastSpoke = now;
+    Speech.speak(bubble.textContent);
+  }
 }
 function randomTalk(){
-  var pool = LINES[state.mood] || [];
-  var text = (Math.random() < 0.65 && pool.length) ? pick(pool) : pick(LINES.common);
-  say(text, CONFIG.bubbleShowMs);
+  var pool = (LINES[state.mood] || []).slice();
+  if (state.bond >= 60) pool = pool.concat(LINES.close);
+  var text = (Math.random() < 0.7 && pool.length) ? pick(pool) : pick(LINES.common);
+  say(text, CONFIG.bubbleShowMs, false, true);
 }
 function scheduleTalk(){
   clearTimeout(talkTimer);
@@ -1062,14 +1602,14 @@ function scheduleTalk(){
     scheduleTalk();
   }, rand(CONFIG.bubbleMinMs, CONFIG.bubbleMaxMs));
 }
-/* 每 1 小时：站起来活动提醒 */
 setInterval(function(){
-  say("{name}，已经坐了很久啦，站起来活动活动吧！💦", 6800, true);
+  Sfx.bell();
   addTmp("flap", 900);
+  if (!state.sleeping) say("{name}，已经坐了很久啦，站起来活动活动吧！💦", 7000, true, true);
 }, CONFIG.hourlyMs);
 
 /* ============================================================
-   😉 眨眼
+   😉 眨眼 / 随机搭话
    ============================================================ */
 var blinkTimer = null;
 function scheduleBlink(){
@@ -1082,11 +1622,35 @@ function scheduleBlink(){
     scheduleBlink();
   }, rand(CONFIG.blinkMinMs, CONFIG.blinkMaxMs));
 }
+setInterval(function(){
+  if (state.sleeping || state.dragging) return;
+  if (Math.random() < 0.35) Sfx.idleChirp();
+}, 45000);
+
+/* 主循环 */
+var lastTick = Date.now(), bondDecayAcc = 0;
+setInterval(function(){
+  var now = Date.now(), dt = now - lastTick; lastTick = now;
+  var idle = now - state.lastInteract;
+  if (idle > 45000) state.happiness = Math.max(0, state.happiness - dt / 60000);
+  if (idle > 600000){
+    bondDecayAcc += dt;
+    if (bondDecayAcc > 600000){
+      bondDecayAcc = 0;
+      state.bond = clamp(state.bond - 1, 0, CONFIG.bondMax);
+      LS("petBond", String(Math.round(state.bond)));
+    }
+  }
+  updatePhase();
+  updateMood();
+  updateBadge();
+}, 250);
+setInterval(tickCompanion, 1000);
+setInterval(updateBadge, 10000);
 
 /* ============================================================
-   ✨ 特效生成
+   ✨ 特效
    ============================================================ */
-/* 当前皮肤对应的撒花符号（节日限定皮肤会撒节日元素） */
 function currentFlowers(){
   var cls = SKINS[state.skinIndex] ? SKINS[state.skinIndex].cls : "";
   if (cls === "skin-christmas") return FLOWERS_XMAS;
@@ -1102,8 +1666,7 @@ function burst(x, y, n){
     el.textContent = pick(pool);
     el.style.setProperty("--x", x + "px");
     el.style.setProperty("--y", y + "px");
-    var a = Math.random() * Math.PI * 2;
-    var d = rand(40, 130);
+    var a = Math.random() * Math.PI * 2, d = rand(40, 130);
     el.style.setProperty("--tx", (Math.cos(a) * d).toFixed(0) + "px");
     el.style.setProperty("--ty", (Math.sin(a) * d - 30).toFixed(0) + "px");
     el.style.setProperty("--rot", rand(-300, 300).toFixed(0) + "deg");
@@ -1135,8 +1698,7 @@ function hearts(x, y, n){
 }
 function spawnFish(x, y){
   var el = document.createElement("span");
-  el.className = "fish";
-  el.textContent = "🐟";
+  el.className = "fish"; el.textContent = "🐟";
   el.style.setProperty("--x", x + "px");
   el.style.setProperty("--y", y + "px");
   fx.appendChild(el);
@@ -1144,8 +1706,7 @@ function spawnFish(x, y){
 }
 function spawnZzz(x, y){
   var el = document.createElement("span");
-  el.className = "zzz";
-  el.textContent = pick(["Z","z","Zz"]);
+  el.className = "zzz"; el.textContent = pick(["Z","z","Zz"]);
   el.style.setProperty("--x", x + "px");
   el.style.setProperty("--y", y + "px");
   fx.appendChild(el);
@@ -1153,8 +1714,7 @@ function spawnZzz(x, y){
 }
 function chorus(text, x, y){
   var el = document.createElement("span");
-  el.className = "chorus";
-  el.textContent = text;
+  el.className = "chorus"; el.textContent = text;
   el.style.setProperty("--x", x + "px");
   el.style.setProperty("--y", y + "px");
   fx.appendChild(el);
@@ -1165,34 +1725,72 @@ function removeLater(el, ms){
 }
 
 /* ============================================================
+   🎨 皮肤 / 造型 / 体型
+   ============================================================ */
+function applySkin(i){
+  state.skinIndex = ((i % SKINS.length) + SKINS.length) % SKINS.length;
+  SKINS.forEach(function(s){ pet.classList.remove(s.cls); });
+  pet.classList.add(SKINS[state.skinIndex].cls);
+  LS("petSkinIndex", String(state.skinIndex));
+}
+function applyOutfit(i){
+  state.outfitIndex = ((i % OUTFITS.length) + OUTFITS.length) % OUTFITS.length;
+  OUTFITS.forEach(function(o){ pet.classList.remove(o.cls); });
+  pet.classList.add(OUTFITS[state.outfitIndex].cls);
+  LS("petOutfitIndex", String(state.outfitIndex));
+}
+function applyGrow(){ pet.style.setProperty("--grow", state.grow.toFixed(3)); }
+
+/* ============================================================
    🚀 初始化
    ============================================================ */
 function init(){
+  var savedSkin = parseInt(LS("petSkinIndex") || "0", 10) || 0;
+  var savedOutfit = parseInt(LS("petOutfitIndex") || "0", 10) || 0;
+  state.userName = LS("petUserName") || "";
+  state.bond = parseFloat(LS("petBond") || "12") || 12;
+  state.full = parseInt(LS("petFull") || "0", 10) || 0;
+  state.grow = 1 + state.full * 0.022;
+  state.goalLabel = LS("petGoalLabel") || "出发";
+  state.goalDate = LS("petGoalDate") || "";
+  state.showTime = LS("petShowTime") !== "0";
+  state.showBond = LS("petShowBond") !== "0";
+  state.showBadge = LS("petShowBadge") !== "0";
+  Sfx.setLevel(parseInt(LS("petSoundLevel") || "2", 10) || 2);
+  if (LS("petVoice") === "0") Speech.toggle();
+
   relayout();
-  state.x = clamp(window.innerWidth * 0.62, layout.xMin, layout.xMax); // 起始位置：屏幕偏右
+  state.x = clamp(window.innerWidth * 0.62, layout.xMin, layout.xMax);
   state.y = layout.yMax;
   render();
   applyFacing();
-  setMood("happy");
-  /* 恢复上次选择的皮肤（第一次打开是经典黑白） */
-  var savedSkin = 0;
-  try { savedSkin = parseInt(localStorage.getItem("petSkinIndex"), 10) || 0; } catch (e) { savedSkin = 0; }
   applySkin(savedSkin);
-  /* 恢复上次设置的称呼 */
-  try { state.userName = localStorage.getItem("petUserName") || ""; } catch (e) { state.userName = ""; }
+  applyOutfit(savedOutfit);
+  applyGrow();
+  setMood("happy");
+  updatePhase();
+  updateBadge();
+  try {
+    var rec = JSON.parse(LS("petCompanion") || "{}");
+    if (rec && rec.date === new Date().toISOString().slice(0, 10)) state.todaySeconds = rec.sec || 0;
+  } catch(e){}
+
   scheduleBlink();
   scheduleTalk();
   scheduleAction();
-  /* 开场打个招呼（有称呼就直接叫名字） */
+
   setTimeout(function(){
-    say(state.userName ? ("欢迎回来呀，" + state.userName + "！右键点我可以互动哦~")
-                       : "你好呀！右键点我可以互动哦~", 4400);
+    var hi = state.userName
+      ? ("欢迎回来呀，" + state.userName + "！我是" + CONFIG.petName + "，右键点我可以互动哦~")
+      : ("你好呀！我是" + CONFIG.petName + "，右键点我可以互动哦~");
+    say(hi, 4600, false, true);
   }, 1200);
-  /* 还没设置称呼的话，过一会儿提醒一下 */
   if (!state.userName){
-    setTimeout(function(){ say("对了，右键 → ✏️改称呼，我就能叫你的名字啦~", 5000); }, 12000);
+    setTimeout(function(){ say("对了，右键 → ✏️改称呼，我就能叫你的名字啦~", 5000); }, 13000);
   }
-  /* Electron 模式：默认穿透鼠标，桌面正常使用 */
+  if (state.phase === "night" || state.phase === "deep"){
+    setTimeout(function(){ enterAutoSleep(state.phase); }, 1500);
+  }
   setIgnore(true);
 }
 window.addEventListener("resize", relayout);
