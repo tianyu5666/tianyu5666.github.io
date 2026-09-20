@@ -52,7 +52,7 @@ body{
 }
 .hint.show{opacity:1}
 
-/* 认识你的第 N 天 */
+/* 在一起的第 N 天（与那封信同步） */
 .caption .days{
   margin-top:10px;font-size:clamp(11.5px,2.2vw,14px);letter-spacing:.28em;padding-left:.28em;
   color:rgba(255,205,225,.7);
@@ -140,10 +140,12 @@ var CONFIG = {
   heartBpm: 52,              // 心动周期（越小越快）
   heartGrowMs: 90000,        // 待多久之后心跳最明显
 
-  /* —— 💗 创意二：认识你的第 N 天 —— */
-  sinceDate: "2026-09-15",   // 相识纪念日（改这里）
-  sinceLabel: "认识你的第",  // 文案前半
+  /* —— 💗 创意二：和那封信同步的「在一起」计时 —— */
+  syncKey: "loveStart",      // 与那封信共用同一个开始时刻（她点下「我愿意」的那一秒）
+  sinceFallback: "",         // 兜底日期，如 "2026-09-15"；留空 = 没记录就整行不显示
+  sinceLabel: "在一起的第",  // 文案前半（与信上一致）
   sinceUnit: "天",           // 文案后半
+  sinceClock: true,          // 再跟一个和信上同步走动的时钟
 
   /* —— 💗 创意三：许愿流星 —— */
   wishMax: 9,                // 天上最多挂几颗许愿星
@@ -738,15 +740,45 @@ function heartbeatScale(t){
   return 1 + (b1 + b2) * (0.009 + 0.013 * deep);
 }
 
-/* 💗 创意二：认识你的第 N 天 */
-function daysTogether(){
+/* 💗 创意二：和那封信同步的「在一起」计时
+   · 与首页那封信共用 localStorage.loveStart（她点下「我愿意」的那一秒）
+   · 同一个站点 → 同源 → 自动同步；换设备/换浏览器时用 sinceFallback 兜底
+   · 完全没有记录时，这一行干脆不出现（不编造一个假日期） */
+function loveStart(){
   try{
-    var a = new Date(CONFIG.sinceDate + "T00:00:00");
-    var b = new Date(); b.setHours(0, 0, 0, 0);
-    var d = Math.floor((b.getTime() - a.getTime()) / 86400000) + 1;
-    return d > 0 ? d : 0;
-  }catch(e){ return 0; }
+    var v = parseInt(localStorage.getItem(CONFIG.syncKey), 10);
+    if (v > 0) return v;
+  }catch(e){}
+  var f = CONFIG.sinceFallback;
+  if (typeof f === "string" && f){
+    var d = Date.parse(f + (f.length <= 10 ? "T00:00:00" : ""));
+    if (d > 0) return d;
+  } else if (typeof f === "number" && f > 0){
+    return f;
+  }
+  return 0;
 }
+function pad2(n){ return (n < 10 ? "0" : "") + n; }
+
+var daysEl = document.getElementById("capDays"), startAt = 0;
+function tickTogether(){
+  if (!startAt) return;
+  var diff = Math.max(0, Date.now() - startAt);
+  var days = Math.floor(diff / 86400000) + 1;          /* 与她点下「我愿意」那天算第 1 天 */
+  var rest = diff % 86400000;
+  var s = CONFIG.sinceLabel + " " + days + " " + CONFIG.sinceUnit;
+  if (CONFIG.sinceClock){
+    s += " · " + pad2(Math.floor(rest / 3600000)) + ":" + pad2(Math.floor(rest % 3600000 / 60000)) + ":" + pad2(Math.floor(rest % 60000 / 1000));
+  }
+  daysEl.textContent = s;
+}
+function initTogether(){
+  startAt = loveStart();
+  if (!startAt){ daysEl.style.display = "none"; return; }
+  tickTogether();
+  setInterval(tickTogether, 1000);
+}
+window.__love = { start: loveStart, init: initTogether, cfg: CONFIG };
 
 var petals = [];
 function spawnPetal(){
@@ -981,10 +1013,9 @@ window.addEventListener("keydown", function(e){ if (e.key === "b" || e.key === "
 document.getElementById("capLine").textContent = CONFIG.caption;
 document.getElementById("capSign").textContent = CONFIG.signature;
 resize();
-/* 💗 相识天数 + 自动烟花 + 整点烟花 */
+/* 💗 与信同步的「在一起」计时 + 自动烟花 + 整点烟花 */
 pageStart = performance.now();
-document.getElementById("capDays").textContent =
-  CONFIG.sinceLabel + " " + daysTogether() + " " + CONFIG.sinceUnit;
+initTogether();
 setInterval(function(){ launchFirework(); }, CONFIG.fireworkEveryMs);
 var lastHour = new Date().getHours();
 setInterval(function(){
