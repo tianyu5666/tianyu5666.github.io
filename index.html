@@ -789,5 +789,31 @@ window.addEventListener("resize", function(){
   @keyframes pet-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 </style>
 <a href="/pet/" class="pet-entry" title="我的小企鹅 · 点我看看">🐧</a>
+
+<!-- 🌹 玫瑰入口（粒子情书：粒子先拼出「韩玉」，再绽放成红玫瑰） -->
+<style>
+  .rose-entry{
+    position:fixed;right:20px;bottom:90px;z-index:99;width:58px;height:58px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;font-size:27px;line-height:1;
+    text-decoration:none;background:linear-gradient(135deg,#ffd7e4,#ff8fb0);
+    border:2px solid rgba(255,255,255,.95);
+    box-shadow:0 8px 22px rgba(220,60,110,.4);
+    animation:rose-beat 2.2s ease-in-out infinite;
+    transition:transform .2s ease,box-shadow .2s ease;
+  }
+  .rose-entry:hover{transform:scale(1.1);box-shadow:0 12px 30px rgba(220,60,110,.55)}
+  .rose-entry::after{
+    content:"点我，看一朵玫瑰";position:absolute;right:66px;white-space:nowrap;
+    font-size:12px;color:#8a2b4d;background:rgba(255,255,255,.95);
+    padding:4px 10px;border-radius:10px;box-shadow:0 4px 12px rgba(200,80,120,.22);
+    opacity:0;transition:opacity .2s ease;pointer-events:none;
+  }
+  .rose-entry:hover::after{opacity:1}
+  @keyframes rose-beat{
+    0%,100%{transform:scale(1)} 12%{transform:scale(1.10)}
+    24%{transform:scale(1)} 36%{transform:scale(1.05)} 50%{transform:scale(1)}
+  }
+</style>
+<a href="/rose.html" class="rose-entry" title="为你准备的一朵玫瑰 🌹">🌹</a>
 </body>
 </html>
