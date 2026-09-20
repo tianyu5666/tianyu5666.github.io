@@ -1081,21 +1081,30 @@ function probe(src){
   return new Promise(function(res){
     var a = new Audio(), done = false;
     a.preload = "metadata";
-    a.addEventListener("loadeddata", function(){ if (!done){ done = true; res(src); } });
+    a.addEventListener("loadedmetadata", function(){ if (!done){ done = true; res(src); } });
+    a.addEventListener("canplay", function(){ if (!done){ done = true; res(src); } });
     a.addEventListener("error", function(){ if (!done){ done = true; res(""); } });
-    setTimeout(function(){ if (!done){ done = true; res(""); } }, 3000);
+    setTimeout(function(){ if (!done){ done = true; res(""); } }, 8000);
     a.src = src;
   });
 }
 function findMusic(){
-  var list = CONFIG.musicSources || [], i = 0;
-  (function next(){
-    if (i >= list.length){ probed = true; applyMusicAvailability(); return; }
-    probe(list[i]).then(function(ok){
-      if (ok){ audioSrc = ok; probed = true; applyMusicAvailability(); }
-      else { i++; next(); }
-    });
-  })();
+  var list = CONFIG.musicSources || [];
+  function pass(retry){
+    var i = 0;
+    (function next(){
+      if (i >= list.length){
+        probed = true; applyMusicAvailability();
+        if (retry) setTimeout(function(){ if (!audioSrc) pass(false); }, 2000);   /* 网络抖动就再试一次 */
+        return;
+      }
+      probe(list[i]).then(function(ok){
+        if (ok){ audioSrc = ok; probed = true; applyMusicAvailability(); }
+        else { i++; next(); }
+      });
+    })();
+  }
+  pass(true);
 }
 /* 既没有歌、又不让放小夜曲 → 干脆不显示这个按钮，别让她点了个寂寞 */
 function applyMusicAvailability(){
