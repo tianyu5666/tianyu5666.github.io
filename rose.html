@@ -200,12 +200,10 @@ var CONFIG = {
   /* —— 🎵 背景音乐（《在你的身边》— 盛哲）——
      把歌放进站点 music/ 文件夹，文件名用下面任意一个都认（mp3 / m4a / flac / wav 都行） */
   musicSources: [
+    "https://cdn.jsdelivr.net/gh/tianyu5666/tianyu5666.github.io@main/music/zainishenbian.mp3",
     "music/zainishenbian.mp3",
-    "music/zainishenbian.m4a",
-    "music/zainishenbian.flac",
     "music/在你的身边.mp3",
-    "music/在你的身边.m4a",
-    "music/bgm.mp3"
+    "music/zainishenbian.m4a"
   ],
   lullabyFallback: false     // 没有歌时是否用内置小夜曲顶替（false＝没有歌就整个不显示 ♪ 按钮）
 };
@@ -1076,39 +1074,40 @@ function nowShow(text){
   nowShow._t = setTimeout(function(){ nowEl.classList.remove("show"); }, 5200);
 }
 
-/* —— 先看看站点里有没有现成的歌 —— */
-function probe(src){
+/* —— 同时探测多个音源，谁先能用就用谁（github.io 在国内经常龟速，jsDelivr 快得多） —— */
+var probeEls = [];
+function probeOnce(src){
   return new Promise(function(res){
     var a = new Audio(), done = false;
+    probeEls.push(a);
+    function finish(v){ if (done) return; done = true; res({ src: v, el: a }); }
     a.preload = "metadata";
-    a.addEventListener("loadedmetadata", function(){ if (!done){ done = true; res(src); } });
-    a.addEventListener("canplay", function(){ if (!done){ done = true; res(src); } });
-    a.addEventListener("error", function(){ if (!done){ done = true; res(""); } });
-    setTimeout(function(){ if (!done){ done = true; res(""); } }, 8000);
+    a.addEventListener("loadedmetadata", function(){ finish(src); });
+    a.addEventListener("canplay", function(){ finish(src); });
+    a.addEventListener("error", function(){ finish(""); });
+    setTimeout(function(){ finish(""); }, 7000);
     a.src = src;
   });
 }
+function killProbes(except){
+  for (var i = 0; i < probeEls.length; i++){
+    if (probeEls[i] === except) continue;
+    try { probeEls[i].src = ""; } catch(e){}
+  }
+  probeEls = except ? [except] : [];
+}
 function findMusic(){
   var list = CONFIG.musicSources || [];
-  function pass(retry){
-    var i = 0;
-    (function next(){
-      if (i >= list.length){
-        probed = true; applyMusicAvailability();
-        if (retry) setTimeout(function(){ if (!audioSrc) pass(false); }, 2000);   /* 网络抖动就再试一次 */
-        return;
-      }
-      probe(list[i]).then(function(ok){
-        if (ok){ audioSrc = ok; probed = true; applyMusicAvailability(); }
-        else { i++; next(); }
+  for (var i = 0; i < list.length; i++){
+    (function(src){
+      probeOnce(src).then(function(r){
+        if (r.src){
+          if (!audioSrc) audioSrc = r.src;      /* 第一个能用的音源胜出 */
+          killProbes(r.el);                     /* 其余的探测立刻掐掉，别占带宽 */
+        }
       });
-    })();
+    })(list[i]);
   }
-  pass(true);
-}
-/* 既没有歌、又不让放小夜曲 → 干脆不显示这个按钮，别让她点了个寂寞 */
-function applyMusicAvailability(){
-  musicBtn.style.display = (!audioSrc && !CONFIG.lullabyFallback) ? "none" : "";
 }
 
 /* —— 内置小夜曲（现场合成，一个音符都不下载） —— */
@@ -1175,24 +1174,19 @@ function fadeAudio(to, ms){
 
 function playMusic(){
   if (musicPlaying) return;
-  if (!audioSrc && !CONFIG.lullabyFallback) return;
+  if (!CONFIG.lullabyFallback && !(CONFIG.musicSources || []).length) return;
   musicPlaying = true;
   musicBtn.classList.add("on");
   musicBtn.title = "点一下，关掉音乐";
   musicBtn.setAttribute("aria-label", "关闭背景音乐");
-  if (audioSrc){
-    if (!audioEl){
-      audioEl = new Audio(audioSrc);
-      audioEl.loop = true;                      /* 无限循环 */
-      audioEl.preload = "auto";
-      /* 双保险：万一某些浏览器忽略 loop，播完自己从头再来 */
-      audioEl.addEventListener("ended", function(){
-        try { audioEl.currentTime = 0; audioEl.play(); } catch(e){}
-      });
-    }
+  if (musicSources().length){
+    if (!ensureAudioEl()) return;
     audioEl.volume = 0;
     var pr = audioEl.play();                    /* 关掉再打开＝接着上次听，不是从头 */
-    if (pr && pr.catch) pr.catch(function(){ musicPlaying = false; musicBtn.classList.remove("on"); });
+    if (pr && pr.catch) pr.catch(function(){
+      /* 被浏览器拦下或音源没就绪：保持开启状态，等下一次点击再试 */
+      setTimeout(function(){ if (musicPlaying && audioEl) audioEl.play().catch(function(){}); }, 600);
+    });
     fadeAudio(CONFIG.musicVolume, 1800);
     nowShow("♪ " + CONFIG.musicTitle + "　·　点右上角 ♪ 可关掉");
   } else {
@@ -1205,13 +1199,54 @@ function playMusic(){
     nowShow("♪ " + CONFIG.lullabyTitle + "　·　点右上角 ♪ 可关掉");
   }
 }
+/* 音源列表：探测出来的排第一，其余依次兜底 */
+function musicSources(){
+  var all = (CONFIG.musicSources || []).slice();
+  if (audioSrc){
+    var i = all.indexOf(audioSrc);
+    if (i > 0){ all.splice(i, 1); all.unshift(audioSrc); }
+    else if (i < 0){ all.unshift(audioSrc); }
+  }
+  return all;
+}
+var srcTried = 0;
+function ensureAudioEl(){
+  var list = musicSources();
+  if (!audioEl){
+    if (!list.length) return false;
+    srcTried = 0;
+    audioEl = new Audio();
+    audioEl.loop = true;                        /* 无限循环 */
+    audioEl.preload = "auto";
+    /* 双保险：万一某些浏览器忽略 loop，播完自己从头再来 */
+    audioEl.addEventListener("ended", function(){
+      try { audioEl.currentTime = 0; audioEl.play(); } catch(e){}
+    });
+    /* 这个源不通就换下一个 */
+    audioEl.addEventListener("error", function(){
+      srcTried++;
+      var l = musicSources();
+      if (srcTried < l.length){
+        audioEl.src = l[srcTried];
+        audioEl.load();
+        if (musicPlaying){ var p = audioEl.play(); if (p && p.catch) p.catch(function(){}); }
+      } else {
+        musicPlaying = false;
+        musicBtn.classList.remove("on");
+        nowShow("音乐暂时加载不出来，过会儿再点一下 ♪");
+      }
+    });
+    audioEl.src = list[0];
+  }
+  return true;
+}
 function stopMusic(){
   if (!musicPlaying) return;
   musicPlaying = false;
   musicBtn.classList.remove("on");
   musicBtn.title = "点一下，放首歌";
   musicBtn.setAttribute("aria-label", "播放背景音乐");
-  if (audioSrc && audioEl){
+  if (audioEl){
     fadeAudio(0, 700);
     setTimeout(function(){ if (!musicPlaying && audioEl) audioEl.pause(); }, 760);
   } else if (ac && musicGain){
@@ -1235,7 +1270,7 @@ function unlockMusic(e){
   if (e && e.target && e.target.closest && e.target.closest("#musicBtn")) return;
   if (unlocked) return;
   unlocked = true;
-  if (musicWanted && !musicPlaying && audioSrc) playMusic();
+  if (musicWanted && !musicPlaying) playMusic();
 }
 window.addEventListener("pointerdown", unlockMusic, true);
 window.addEventListener("keydown", unlockMusic, true);
@@ -1247,14 +1282,15 @@ document.addEventListener("visibilitychange", function(){
     if (audioEl) audioEl.pause();
     if (ac && ac.state === "running") ac.suspend();
   } else {
-    if (audioEl && audioSrc){ var p = audioEl.play(); if (p && p.catch) p.catch(function(){}); }
+    if (audioEl){ var p = audioEl.play(); if (p && p.catch) p.catch(function(){}); }
     if (ac && ac.state === "suspended") ac.resume();
   }
 });
 
 window.__music = {
   playing: function(){ return musicPlaying; },
-  source: function(){ return audioSrc || "synth"; },
+  source: function(){ return (audioEl && audioEl.src) ? audioEl.src : (audioSrc || "none"); },
+  best: function(){ return audioSrc || "none"; },
   ctx: function(){ return ac ? ac.state : "none"; },
   gain: function(){ return musicGain ? +musicGain.gain.value.toFixed(3) : 0; },
   steps: function(){ return stepIdx; },
