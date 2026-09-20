@@ -103,8 +103,8 @@ var CONFIG = {
   sparkle: 0.06,             // 亮点比例（质感）
 
   /* —— 转场 —— */
-  morphMs: 1150,
-  staggerMs: 300,
+  morphMs: 1250,
+  staggerMs: 240,
   holdNameMs: 6200,
   holdRoseMs: 9000,
   idleJitter: 0.55,
@@ -384,7 +384,7 @@ function assignTargets(pts, instant){
       sumTravel += travel; cntTravel++; if (travel > maxT) maxT = travel;
       q.t0 = time + (travel / maxTravel) * CONFIG.staggerMs;
       q.dur = CONFIG.morphMs;
-      q.arc = (Math.random() - 0.5) * Math.min(90, travel * 0.22);
+      q.arc = (Math.random() - 0.5) * Math.min(42, travel * 0.10);   /* 弧线收小 → 轨迹更直更稳 */
     }
   }
 }
