@@ -384,7 +384,7 @@ function assignTargets(pts, instant){
       sumTravel += travel; cntTravel++; if (travel > maxT) maxT = travel;
       q.t0 = time + (travel / maxTravel) * CONFIG.staggerMs;
       q.dur = CONFIG.morphMs;
-      q.arc = (Math.random() - 0.5) * Math.min(42, travel * 0.10);   /* 弧线收小 → 轨迹更直更稳 */
+      q.arc = (Math.random() - 0.5) * travel * 0.09;   /* 弧线只与行程成正比 → 近距离走直线，远距离轻弧 */
     }
   }
 }
