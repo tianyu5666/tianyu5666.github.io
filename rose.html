@@ -52,6 +52,21 @@ body{
 }
 .hint.show{opacity:1}
 
+/* 认识你的第 N 天 */
+.caption .days{
+  margin-top:10px;font-size:clamp(11.5px,2.2vw,14px);letter-spacing:.28em;padding-left:.28em;
+  color:rgba(255,205,225,.7);
+}
+/* 许愿情话 */
+.love{
+  position:fixed;left:50%;bottom:19%;transform:translate(-50%,10px);z-index:6;
+  font-family:"Kaiti SC","STKaiti","KaiTi","楷体",serif;
+  font-size:clamp(15px,3.2vw,22px);letter-spacing:.2em;padding-left:.2em;
+  color:#fff0f6;text-shadow:0 0 20px rgba(255,90,140,.85),0 0 46px rgba(255,50,100,.5);
+  opacity:0;transition:opacity 1.2s ease,transform 1.2s ease;pointer-events:none;white-space:nowrap;
+}
+.love.show{opacity:1;transform:translate(-50%,0)}
+
 .toletter{
   position:fixed;right:18px;bottom:18px;z-index:5;font-size:13px;text-decoration:none;
   color:#ffe3ec;padding:9px 16px;border-radius:999px;
@@ -75,8 +90,10 @@ body{
 <div class="caption" id="caption">
   <div class="line" id="capLine">愿你如玫瑰，永远盛开</div>
   <div class="sign" id="capSign">—— 连天瑜</div>
+  <div class="days" id="capDays"></div>
 </div>
-<div class="hint" id="hint">轻触屏幕，花瓣会飞起来</div>
+<div class="hint" id="hint">轻触屏幕，接住一颗流星</div>
+<div class="love" id="love"></div>
 <a class="toletter" id="toletter" href="/">读那封信 →</a>
 
 <script>
@@ -108,7 +125,38 @@ var CONFIG = {
   holdNameMs: 6200,
   holdRoseMs: 9000,
   idleJitter: 0.55,
-  clickBurst: 1.15
+  clickBurst: 1.15,
+
+  /* —— 🎆 氛围：流星雨 / 烟花 / 背景 —— */
+  meteorRate: 0.85,          // 流星频率（每秒出现概率）
+  meteorBurst: 0.06,         // 流星雨爆发概率（偶尔成片划过）
+  fireworkEveryMs: 45000,    // 自动烟花间隔（毫秒）；整点必放
+  fireworkOnRose: true,      // 玫瑰绽放时是否放烟花庆祝
+  nebula: true,              // 星云背景
+  cometTail: true,           // 许愿星拖尾
+
+  /* —— 💗 创意一：心跳律动 —— */
+  heartbeat: true,           // 形状按心跳节拍搏动（而不是普通呼吸）
+  heartBpm: 52,              // 心动周期（越小越快）
+  heartGrowMs: 90000,        // 待多久之后心跳最明显
+
+  /* —— 💗 创意二：认识你的第 N 天 —— */
+  sinceDate: "2026-09-15",   // 相识纪念日（改这里）
+  sinceLabel: "认识你的第",  // 文案前半
+  sinceUnit: "天",           // 文案后半
+
+  /* —— 💗 创意三：许愿流星 —— */
+  wishMax: 9,                // 天上最多挂几颗许愿星
+  wishLines: [
+    "愿你所愿皆成真",
+    "你笑起来最好看",
+    "遇见你，是我最好的运气",
+    "想陪你走很远很远",
+    "你值得世间所有温柔",
+    "谢谢你出现在我的世界里",
+    "有你在，日子都是甜的",
+    "要一直这么好看下去呀"
+  ]
 };
 
 var canvas = document.getElementById("stage");
@@ -348,7 +396,7 @@ function assignTargets(pts, instant){
   }
   order.sort(function(u, v){ return u.a - v.a; });
 
-  var maxTravel = 1;
+  var maxTravel = 1, sumTravel = 0, cntTravel = 0, maxT = 0;
   for (var k = 0; k < n; k++){
     if (k >= pts.length) break;
     var q0 = particles[order[k].i];
@@ -382,6 +430,7 @@ function assignTargets(pts, instant){
     } else {
       var travel = Math.sqrt((q.tx - q.sx) * (q.tx - q.sx) + (q.ty - q.sy) * (q.ty - q.sy));
       sumTravel += travel; cntTravel++; if (travel > maxT) maxT = travel;
+      window.__travel = { avg: Math.round(sumTravel / cntTravel), max: Math.round(maxT), cnt: cntTravel };
       q.t0 = time + (travel / maxTravel) * CONFIG.staggerMs;
       q.dur = CONFIG.morphMs;
       q.arc = (Math.random() - 0.5) * travel * 0.09;   /* 弧线只与行程成正比 → 近距离走直线，远距离轻弧 */
@@ -401,13 +450,18 @@ function setPhase(next, instant){
     phaseUntil = time + CONFIG.holdRoseMs;
     caption.classList.add("show");
     toletter.classList.add("show");
+    /* 玫瑰绽放 → 放两束烟花庆祝 */
+    if (CONFIG.fireworkOnRose){
+      launchFirework();
+      setTimeout(function(){ launchFirework(); }, 560);
+    }
   }
 }
 
 /* ============================================================
    背景
    ============================================================ */
-var stars = [], bgGrad = null, haloGrad = null;
+var stars = [], bgGrad = null, haloGrad = null, nebula = null;
 function buildBackground(){
   stars.length = 0;
   var n = Math.round(clamp((W * H) / 15000, 60, 220));
@@ -422,6 +476,30 @@ function buildBackground(){
   haloGrad.addColorStop(0, "rgba(255,70,120,.10)");
   haloGrad.addColorStop(0.5, "rgba(255,60,110,.04)");
   haloGrad.addColorStop(1, "rgba(255,60,110,0)");
+  /* 星云背景：预渲染一次，每帧只做位移叠加（省性能） */
+  if (CONFIG.nebula){
+    nebula = document.createElement("canvas");
+    nebula.width = Math.max(1, Math.floor(W / 3));
+    nebula.height = Math.max(1, Math.floor(H / 3));
+    var nc = nebula.getContext("2d");
+    var blobs = [
+      { x: 0.24, y: 0.30, r: 0.55, c: "rgba(255,90,150,.20)" },
+      { x: 0.76, y: 0.24, r: 0.48, c: "rgba(150,110,255,.16)" },
+      { x: 0.52, y: 0.78, r: 0.58, c: "rgba(255,130,90,.13)" },
+      { x: 0.14, y: 0.82, r: 0.44, c: "rgba(120,180,255,.11)" }
+    ];
+    blobs.forEach(function(b){
+      var bg2 = nc.createRadialGradient(b.x * nebula.width, b.y * nebula.height, 0,
+                                        b.x * nebula.width, b.y * nebula.height,
+                                        b.r * Math.max(nebula.width, nebula.height));
+      bg2.addColorStop(0, b.c);
+      bg2.addColorStop(1, "rgba(0,0,0,0)");
+      nc.fillStyle = bg2;
+      nc.fillRect(0, 0, nebula.width, nebula.height);
+    });
+  } else {
+    nebula = null;
+  }
 }
 
 function drawBackground(){
@@ -440,6 +518,14 @@ function drawBackground(){
     ctx.fill();
   }
   ctx.globalAlpha = 1;
+  /* 星云缓慢漂移（叠加发光） */
+  if (nebula){
+    var ndx = Math.sin(time * 0.00006) * W * 0.04;
+    var ndy = Math.cos(time * 0.00005) * H * 0.03;
+    ctx.globalAlpha = 0.85;
+    ctx.drawImage(nebula, -W * 0.05 + ndx, -H * 0.05 + ndy, W * 1.1, H * 1.1);
+    ctx.globalAlpha = 1;
+  }
   ctx.fillStyle = haloGrad;
   ctx.fillRect(0, 0, W, H);
   ctx.globalCompositeOperation = "source-over";
@@ -448,6 +534,220 @@ function drawBackground(){
 /* ============================================================
    飘落花瓣
    ============================================================ */
+/* ============================================================
+   🌠 流星雨
+   ============================================================ */
+var meteors = [];
+function spawnMeteor(){
+  var fromLeft = Math.random() < 0.5;
+  var speed = rand(540, 1000) * (W / 1300 + 0.65);
+  var ang = rand(0.42, 0.62);
+  meteors.push({
+    x: fromLeft ? rand(-W * 0.12, W * 0.55) : rand(W * 0.45, W * 1.12),
+    y: rand(-H * 0.18, H * 0.32),
+    vx: (fromLeft ? 1 : -1) * Math.cos(ang) * speed,
+    vy: Math.sin(ang) * speed,
+    len: rand(130, 330), life: rand(1.1, 1.9), t: 0, w: rand(1.2, 2.4)
+  });
+}
+function updateMeteors(dt){
+  if (Math.random() < CONFIG.meteorRate * dt / 1000) spawnMeteor();
+  if (Math.random() < CONFIG.meteorBurst * dt / 1000){
+    var n = 3 + Math.floor(Math.random() * 4);
+    for (var k = 0; k < n; k++) setTimeout(spawnMeteor, k * rand(90, 220));
+  }
+  for (var i = meteors.length - 1; i >= 0; i--){
+    var m = meteors[i];
+    m.t += dt / 1000;
+    m.x += m.vx * dt / 1000;
+    m.y += m.vy * dt / 1000;
+    if (m.t > m.life || m.y > H + 140 || m.x < -340 || m.x > W + 340) meteors.splice(i, 1);
+  }
+}
+function drawMeteors(){
+  if (!meteors.length) return;
+  ctx.globalCompositeOperation = "lighter";
+  for (var i = 0; i < meteors.length; i++){
+    var m = meteors[i];
+    var k = clamp(m.t / m.life, 0, 1);
+    var alpha = Math.sin(Math.PI * k) * 0.95;
+    var nl = Math.sqrt(m.vx * m.vx + m.vy * m.vy) || 1;
+    var tx = m.x - m.vx / nl * m.len, ty = m.y - m.vy / nl * m.len;
+    var g = ctx.createLinearGradient(m.x, m.y, tx, ty);
+    g.addColorStop(0, "rgba(255,255,255," + alpha.toFixed(3) + ")");
+    g.addColorStop(0.22, "rgba(255,214,236," + (alpha * 0.55).toFixed(3) + ")");
+    g.addColorStop(1, "rgba(255,180,215,0)");
+    ctx.strokeStyle = g;
+    ctx.lineWidth = m.w;
+    ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(m.x, m.y); ctx.lineTo(tx, ty); ctx.stroke();
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = "#fff";
+    ctx.beginPath(); ctx.arc(m.x, m.y, m.w * 0.95, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+  ctx.globalCompositeOperation = "source-over";
+}
+
+/* ============================================================
+   🎆 烟花
+   ============================================================ */
+var rockets = [], sparks = [];
+var FIRE_HUES = [340, 350, 5, 320, 300, 45];
+function launchFirework(x, hue){
+  rockets.push({
+    x: x == null ? rand(W * 0.2, W * 0.8) : x,
+    y: H + 12,
+    vx: rand(-24, 24),
+    vy: -rand(430, 640),
+    hue: hue == null ? FIRE_HUES[Math.floor(Math.random() * FIRE_HUES.length)] : hue,
+    top: rand(H * 0.14, H * 0.40)
+  });
+}
+function explodeFirework(x, y, hue){
+  var n = Math.round(rand(72, 122));
+  for (var i = 0; i < n; i++){
+    var a = (i / n) * Math.PI * 2 + rand(-0.06, 0.06);
+    var sp = rand(85, 320);
+    var life = rand(0.9, 1.7);
+    sparks.push({ x: x, y: y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
+                  life: life, max: life, h: hue + rand(-16, 16), w: rand(1.4, 2.6) });
+  }
+}
+function updateFireworks(dt){
+  var s = dt / 1000;
+  for (var i = rockets.length - 1; i >= 0; i--){
+    var r = rockets[i];
+    r.vy += 300 * s;
+    r.x += r.vx * s;
+    r.y += r.vy * s;
+    if (r.vy > -40 || r.y < r.top){
+      explodeFirework(r.x, r.y, r.hue);
+      rockets.splice(i, 1);
+    }
+  }
+  for (i = sparks.length - 1; i >= 0; i--){
+    var p = sparks[i];
+    p.vy += 145 * s;
+    p.vx *= 0.987; p.vy *= 0.987;
+    p.x += p.vx * s;
+    p.y += p.vy * s;
+    p.life -= s;
+    if (p.life <= 0) sparks.splice(i, 1);
+  }
+  if (sparks.length > 900) sparks.splice(0, sparks.length - 900);
+}
+function drawFireworks(){
+  if (!rockets.length && !sparks.length) return;
+  ctx.globalCompositeOperation = "lighter";
+  for (var i = 0; i < rockets.length; i++){
+    var r = rockets[i];
+    var g = ctx.createRadialGradient(r.x, r.y, 0, r.x, r.y, 13);
+    g.addColorStop(0, "rgba(255,244,250,.95)");
+    g.addColorStop(1, "rgba(255,150,205,0)");
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(r.x, r.y, 13, 0, Math.PI * 2); ctx.fill();
+  }
+  for (i = 0; i < sparks.length; i++){
+    var p = sparks[i];
+    var k = clamp(p.life / p.max, 0, 1);
+    ctx.globalAlpha = k;
+    ctx.fillStyle = "hsl(" + p.h.toFixed(0) + ",92%," + (56 + 24 * k).toFixed(0) + "%)";
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.w * (0.45 + 0.95 * k), 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = "source-over";
+}
+
+/* ============================================================
+   ⭐ 许愿星（点击接住一颗流星）
+   ============================================================ */
+var wishes = [];
+var love = document.getElementById("love");
+var loveTimer = null, lastLine = -1;
+function wishLine(){
+  if (!CONFIG.wishLines.length) return;
+  var i = Math.floor(Math.random() * CONFIG.wishLines.length);
+  if (CONFIG.wishLines.length > 1 && i === lastLine) i = (i + 1) % CONFIG.wishLines.length;
+  lastLine = i;
+  love.textContent = CONFIG.wishLines[i];
+  love.classList.add("show");
+  clearTimeout(loveTimer);
+  loveTimer = setTimeout(function(){ love.classList.remove("show"); }, 3600);
+}
+function addWish(x, y){
+  if (wishes.length >= CONFIG.wishMax) wishes.shift();
+  wishes.push({
+    x: x, y: y,
+    tx: clamp(x + rand(-60, 60), W * 0.08, W * 0.92),
+    ty: rand(H * 0.10, H * 0.32),
+    t: 0, dur: rand(1.7, 2.5), ph: Math.random() * 6.28
+  });
+  wishLine();
+  if (Math.random() < 0.5) setTimeout(function(){ launchFirework(clamp(x, W * 0.15, W * 0.85)); }, 420);
+}
+function updateWishes(dt){
+  for (var i = 0; i < wishes.length; i++){
+    var w = wishes[i];
+    if (w.t < 1) w.t = clamp(w.t + dt / 1000 / w.dur, 0, 1);
+  }
+}
+function drawWishes(){
+  if (!wishes.length) return;
+  ctx.globalCompositeOperation = "lighter";
+  for (var i = 0; i < wishes.length; i++){
+    var w = wishes[i];
+    var e = easeInOutCubic(w.t);
+    var x = lerp(w.x, w.tx, e);
+    var y = lerp(w.y, w.ty, e);
+    var tw = 0.65 + 0.35 * Math.sin(time * 0.0024 + w.ph);
+    if (CONFIG.cometTail && w.t < 1){
+      var ex = lerp(w.x, w.tx, Math.max(0, e - 0.25));
+      var ey = lerp(w.y, w.ty, Math.max(0, e - 0.25));
+      var g = ctx.createLinearGradient(x, y, ex, ey);
+      g.addColorStop(0, "rgba(255,235,245,.6)");
+      g.addColorStop(1, "rgba(255,180,215,0)");
+      ctx.strokeStyle = g;
+      ctx.lineWidth = 2.2;
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(ex, ey); ctx.stroke();
+    }
+    var r = 11 + 4 * tw;
+    var rg = ctx.createRadialGradient(x, y, 0, x, y, r);
+    rg.addColorStop(0, "rgba(255,255,255," + (0.95 * tw).toFixed(2) + ")");
+    rg.addColorStop(0.35, "rgba(255,214,236," + (0.5 * tw).toFixed(2) + ")");
+    rg.addColorStop(1, "rgba(255,180,215,0)");
+    ctx.fillStyle = rg;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.globalCompositeOperation = "source-over";
+}
+
+/* ============================================================
+   💗 创意一：心跳律动（不是普通呼吸，而是"咚·咚—"的心跳）
+   ============================================================ */
+var pageStart = 0;
+function heartbeatScale(t){
+  if (!CONFIG.heartbeat) return 1 + 0.010 * Math.sin(t * 0.0015);
+  var deep = pageStart ? clamp((t - pageStart) / CONFIG.heartGrowMs, 0, 1) : 0;
+  var period = 60000 / CONFIG.heartBpm;
+  var p = pageStart ? (((t - pageStart) % period) / period) : 0;
+  var b1 = Math.exp(-Math.pow((p - 0.05) / 0.045, 2));
+  var b2 = Math.exp(-Math.pow((p - 0.20) / 0.055, 2)) * 0.62;
+  return 1 + (b1 + b2) * (0.009 + 0.013 * deep);
+}
+
+/* 💗 创意二：认识你的第 N 天 */
+function daysTogether(){
+  try{
+    var a = new Date(CONFIG.sinceDate + "T00:00:00");
+    var b = new Date(); b.setHours(0, 0, 0, 0);
+    var d = Math.floor((b.getTime() - a.getTime()) / 86400000) + 1;
+    return d > 0 ? d : 0;
+  }catch(e){ return 0; }
+}
+
 var petals = [];
 function spawnPetal(){
   var s = Math.min(W, H);
@@ -487,7 +787,7 @@ function drawPetals(){
 function renderParticles(){
   buf32.fill(0);
   var cx = W / 2, cy = H / 2;
-  var breathe = 1 + 0.011 * Math.sin(time * 0.0015);
+  var breathe = heartbeatScale(time);   /* 💗 心跳律动 */
   var offs = dotOffsets, offLen = offs.length;
 
   for (var i = 0; i < particles.length; i++){
@@ -543,6 +843,10 @@ function frame(now){
   time = now;
 
   perf.frames++;
+  perf.meteors = meteors.length;
+  perf.rockets = rockets.length;
+  perf.sparks = sparks.length;
+  perf.wishes = wishes.length;
   perf.acc += dt;
   if (perf.acc >= 1000){
     perf.fps = Math.round(perf.frames * 1000 / perf.acc);
@@ -571,6 +875,14 @@ function frame(now){
   }
 
   ctx.setTransform(RS, 0, 0, RS, 0, 0);
+  /* 氛围层：流星雨 / 烟花 / 许愿星 */
+  updateMeteors(dt);
+  drawMeteors();
+  updateFireworks(dt);
+  drawFireworks();
+  updateWishes(dt);
+  drawWishes();
+
   if (phase === "rose"){
     if (petals.length < 24 && Math.random() < 0.05) spawnPetal();
     drawPetals();
@@ -657,7 +969,10 @@ function burst(x, y){
   }
   for (var k = 0; k < 6; k++) spawnPetal();
 }
-canvas.addEventListener("pointerdown", function(e){ burst(e.clientX, e.clientY); });
+canvas.addEventListener("pointerdown", function(e){
+  burst(e.clientX, e.clientY);      /* 粒子从点击处炸开 */
+  addWish(e.clientX, e.clientY);    /* ⭐ 接住一颗流星 + 一句情话 */
+});
 window.addEventListener("keydown", function(e){ if (e.key === "b" || e.key === "B") burst(W / 2, H / 2); });
 
 /* ============================================================
@@ -666,6 +981,20 @@ window.addEventListener("keydown", function(e){ if (e.key === "b" || e.key === "
 document.getElementById("capLine").textContent = CONFIG.caption;
 document.getElementById("capSign").textContent = CONFIG.signature;
 resize();
+/* 💗 相识天数 + 自动烟花 + 整点烟花 */
+pageStart = performance.now();
+document.getElementById("capDays").textContent =
+  CONFIG.sinceLabel + " " + daysTogether() + " " + CONFIG.sinceUnit;
+setInterval(function(){ launchFirework(); }, CONFIG.fireworkEveryMs);
+var lastHour = new Date().getHours();
+setInterval(function(){
+  var h = new Date().getHours();
+  if (h !== lastHour){
+    lastHour = h;
+    for (var i = 0; i < 3; i++) setTimeout(launchFirework, i * 420);  /* 整点放三束 */
+  }
+}, 20000);
+
 setPhase("name", true);
 requestAnimationFrame(frame);
 setTimeout(function(){ hint.classList.add("show"); }, 2600);
