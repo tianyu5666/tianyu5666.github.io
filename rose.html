@@ -78,8 +78,32 @@ body{
 .toletter.show{opacity:1;transform:none;pointer-events:auto}
 .toletter:hover{background:rgba(255,90,140,.34)}
 
+/* —— 🎵 背景音乐 —— */
+.music{
+  position:fixed;right:18px;top:14px;z-index:7;width:44px;height:44px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,180,205,.28);
+  backdrop-filter:blur(6px);transition:background .25s ease,border-color .25s ease;
+}
+.music:hover{background:rgba(255,120,160,.2);border-color:rgba(255,140,180,.5)}
+.music .ico{font-size:17px;line-height:1;color:rgba(255,214,228,.78);transition:color .3s ease}
+.music .disc{position:absolute;inset:4px;border-radius:50%;border:1px dashed rgba(255,170,200,.4);opacity:0;transition:opacity .3s ease}
+.music.on .ico{color:#fff}
+.music.on .disc{opacity:1;animation:spin 7s linear infinite}
+.music.on{animation:breathe 3.2s ease-in-out infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes breathe{0%,100%{box-shadow:0 0 0 0 rgba(255,90,140,.30)}50%{box-shadow:0 0 16px 4px rgba(255,90,140,.22)}}
+.nowplaying{
+  position:fixed;right:18px;top:64px;z-index:7;font-size:12px;letter-spacing:.1em;
+  color:rgba(255,214,228,.88);background:rgba(20,10,24,.5);border:1px solid rgba(255,170,200,.22);
+  padding:6px 12px;border-radius:999px;backdrop-filter:blur(6px);white-space:nowrap;
+  opacity:0;transform:translateY(-6px);transition:opacity .6s ease,transform .6s ease;pointer-events:none;
+}
+.nowplaying.show{opacity:1;transform:none}
+
 @media (prefers-reduced-motion:reduce){
   .caption,.hint,.toletter{transition:none}
+  .music.on,.music.on .disc{animation:none}
 }
 </style>
 </head>
@@ -95,6 +119,11 @@ body{
 <div class="hint" id="hint">轻触屏幕，接住一颗流星</div>
 <div class="love" id="love"></div>
 <a class="toletter" id="toletter" href="/">读那封信 →</a>
+
+<button class="music" id="musicBtn" type="button" aria-label="背景音乐" title="点一下，放首歌">
+  <span class="disc"></span><span class="ico">♪</span>
+</button>
+<div class="nowplaying" id="nowPlaying"></div>
 
 <script>
 (function(){
@@ -158,6 +187,18 @@ var CONFIG = {
     "谢谢你出现在我的世界里",
     "有你在，日子都是甜的",
     "要一直这么好看下去呀"
+  ],
+
+  /* —— 🎵 背景音乐 —— */
+  musicAuto: true,           // 她第一次碰屏幕时自动开始播放
+  musicVolume: 0.34,         // 音量上限（0~1）
+  musicTitle: "在你的身边 — 盛哲",
+  lullabyTitle: "送你的小夜曲 · 现场合成",
+  /* 把 mp3 放进站点 music/ 文件夹，这里依次找；一个都没有就用内置小夜曲 */
+  musicSources: [
+    "music/zainishenbian.mp3",
+    "music/在你的身边.mp3",
+    "music/bgm.mp3"
   ]
 };
 
@@ -1006,6 +1047,184 @@ canvas.addEventListener("pointerdown", function(e){
   addWish(e.clientX, e.clientY);    /* ⭐ 接住一颗流星 + 一句情话 */
 });
 window.addEventListener("keydown", function(e){ if (e.key === "b" || e.key === "B") burst(W / 2, H / 2); });
+
+/* ============================================================
+   🎵 背景音乐
+   · 页面旁边放了歌就用歌，没放就用内置的小夜曲（Web Audio 现场合成，不占体积）
+   · 浏览器不让自动出声，所以「她第一次碰屏幕」时才开始
+   · 右上角的 ♪ 可以随时开/关，选择会记住（下次进来还是这个设置）
+   ============================================================ */
+var musicBtn = document.getElementById("musicBtn");
+var nowEl = document.getElementById("nowPlaying");
+var audioEl = null, audioSrc = "", probed = false;
+var ac = null, musicGain = null, synthTimer = null, nextNoteTime = 0, stepIdx = 0;
+var musicPlaying = false;
+var musicWanted = (function(){ try { return localStorage.getItem("roseMusic") !== "off"; } catch(e){ return true; } })();
+
+function nowShow(text){
+  nowEl.textContent = text;
+  nowEl.classList.add("show");
+  clearTimeout(nowShow._t);
+  nowShow._t = setTimeout(function(){ nowEl.classList.remove("show"); }, 5200);
+}
+
+/* —— 先看看站点里有没有现成的歌 —— */
+function probe(src){
+  return new Promise(function(res){
+    var a = new Audio(), done = false;
+    a.preload = "metadata";
+    a.addEventListener("loadeddata", function(){ if (!done){ done = true; res(src); } });
+    a.addEventListener("error", function(){ if (!done){ done = true; res(""); } });
+    setTimeout(function(){ if (!done){ done = true; res(""); } }, 3000);
+    a.src = src;
+  });
+}
+function findMusic(){
+  var list = CONFIG.musicSources || [], i = 0;
+  (function next(){
+    if (i >= list.length){ probed = true; return; }
+    probe(list[i]).then(function(ok){ if (ok){ audioSrc = ok; probed = true; } else { i++; next(); } });
+  })();
+}
+
+/* —— 内置小夜曲（现场合成，一个音符都不下载） —— */
+var CHORDS = [[53,57,60,65],[55,59,62,67],[52,55,59,64],[57,60,64,69],
+              [53,57,60,65],[55,59,62,67],[48,52,55,60],[55,59,62,67]];
+var MELODY = [[69,72],[71,74],[67,71],[69,76],[65,69],[67,74],[72,76],[71,74]];
+var ARP = [0,2,1,3,0,3,1,2], BPM = 66, STEPS = 8;
+
+function midi(m){ return 440 * Math.pow(2, (m - 69) / 12); }
+function ensureAudio(){
+  if (ac) return;
+  var AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return;
+  ac = new AC();
+  musicGain = ac.createGain(); musicGain.gain.value = 0.0001;
+  var lp = ac.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 2400;
+  var dl = ac.createDelay(1.0); dl.delayTime.value = 0.30;
+  var fb = ac.createGain(); fb.gain.value = 0.24;
+  var wet = ac.createGain(); wet.gain.value = 0.3;
+  musicGain.connect(lp); lp.connect(ac.destination);
+  lp.connect(dl); dl.connect(fb); fb.connect(dl); dl.connect(wet); wet.connect(ac.destination);
+}
+function tone(freq, t, dur, vol, type){
+  var o = ac.createOscillator(), g = ac.createGain();
+  o.type = type || "triangle"; o.frequency.value = freq;
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.linearRampToValueAtTime(vol, t + 0.014);
+  g.gain.exponentialRampToValueAtTime(0.0008, t + dur);
+  o.connect(g); g.connect(musicGain);
+  o.start(t); o.stop(t + dur + 0.06);
+}
+function scheduleStep(step, t){
+  var bar = Math.floor(step / STEPS) % CHORDS.length, k = step % STEPS, ch = CHORDS[bar];
+  if (k === 0) tone(midi(ch[0] - 12), t, 1.6, 0.30, "sine");                  /* 低音 */
+  tone(midi(ch[ARP[k]] + (k % 4 === 2 ? 12 : 0)), t, 1.05, 0.13, "triangle"); /* 琶音 */
+  if (k === 0 || k === 4) tone(midi(MELODY[bar][k === 0 ? 0 : 1] + 12), t + 0.02, 1.7, 0.055, "sine"); /* 远处小铃 */
+}
+function synthStart(){
+  ensureAudio(); if (!ac) return;
+  if (ac.state === "suspended") ac.resume();
+  stepIdx = 0; nextNoteTime = ac.currentTime + 0.12;
+  if (synthTimer) clearInterval(synthTimer);
+  synthTimer = setInterval(function(){
+    if (!ac) return;
+    var stepDur = 60 / BPM / 2;
+    while (nextNoteTime < ac.currentTime + 0.3){
+      scheduleStep(stepIdx, nextNoteTime);
+      nextNoteTime += stepDur; stepIdx++;
+    }
+  }, 60);
+}
+function synthStop(){ if (synthTimer){ clearInterval(synthTimer); synthTimer = null; } }
+
+function fadeAudio(to, ms){
+  if (!audioEl) return;
+  var from = audioEl.volume, t0 = Date.now();
+  clearInterval(fadeAudio._t);
+  fadeAudio._t = setInterval(function(){
+    var k = Math.min(1, (Date.now() - t0) / ms);
+    audioEl.volume = clamp(from + (to - from) * k, 0, 1);
+    if (k >= 1) clearInterval(fadeAudio._t);
+  }, 40);
+}
+
+function playMusic(){
+  if (musicPlaying) return;
+  musicPlaying = true;
+  musicBtn.classList.add("on");
+  if (audioSrc){
+    if (!audioEl){ audioEl = new Audio(audioSrc); audioEl.loop = true; audioEl.preload = "auto"; }
+    audioEl.volume = 0;
+    var pr = audioEl.play();
+    if (pr && pr.catch) pr.catch(function(){});
+    fadeAudio(CONFIG.musicVolume, 1800);
+    nowShow("♪ " + CONFIG.musicTitle);
+  } else {
+    ensureAudio();
+    if (!ac){ musicPlaying = false; musicBtn.classList.remove("on"); return; }
+    synthStart();
+    musicGain.gain.cancelScheduledValues(ac.currentTime);
+    musicGain.gain.setValueAtTime(0.0001, ac.currentTime);
+    musicGain.gain.linearRampToValueAtTime(CONFIG.musicVolume, ac.currentTime + 2.2);
+    nowShow("♪ " + CONFIG.lullabyTitle);
+  }
+}
+function stopMusic(){
+  if (!musicPlaying) return;
+  musicPlaying = false;
+  musicBtn.classList.remove("on");
+  if (audioSrc && audioEl){
+    fadeAudio(0, 700);
+    setTimeout(function(){ if (!musicPlaying && audioEl) audioEl.pause(); }, 760);
+  } else if (ac && musicGain){
+    musicGain.gain.cancelScheduledValues(ac.currentTime);
+    musicGain.gain.setValueAtTime(musicGain.gain.value, ac.currentTime);
+    musicGain.gain.linearRampToValueAtTime(0.0001, ac.currentTime + 0.7);
+    setTimeout(function(){ if (!musicPlaying) synthStop(); }, 780);
+  }
+}
+function rememberMusic(v){ musicWanted = v; try { localStorage.setItem("roseMusic", v ? "on" : "off"); } catch(e){} }
+
+musicBtn.addEventListener("click", function(e){
+  e.stopPropagation();
+  if (musicPlaying){ rememberMusic(false); stopMusic(); }
+  else { rememberMusic(true); playMusic(); }
+});
+
+/* 第一次碰屏幕 → 开始播放（把被浏览器拦下的自动播放补上） */
+var unlocked = false;
+function unlockMusic(e){
+  if (e && e.target && e.target.closest && e.target.closest("#musicBtn")) return;
+  if (unlocked) return;
+  unlocked = true;
+  if (musicWanted && !musicPlaying && audioSrc) playMusic();
+}
+window.addEventListener("pointerdown", unlockMusic, true);
+window.addEventListener("keydown", unlockMusic, true);
+
+/* 切走时安静，回来继续 */
+document.addEventListener("visibilitychange", function(){
+  if (!musicPlaying) return;
+  if (document.hidden){
+    if (audioEl) audioEl.pause();
+    if (ac && ac.state === "running") ac.suspend();
+  } else {
+    if (audioEl && audioSrc){ var p = audioEl.play(); if (p && p.catch) p.catch(function(){}); }
+    if (ac && ac.state === "suspended") ac.resume();
+  }
+});
+
+window.__music = {
+  playing: function(){ return musicPlaying; },
+  source: function(){ return audioSrc || "synth"; },
+  ctx: function(){ return ac ? ac.state : "none"; },
+  gain: function(){ return musicGain ? +musicGain.gain.value.toFixed(3) : 0; },
+  steps: function(){ return stepIdx; },
+  wanted: function(){ return musicWanted; }
+};
+
+findMusic();
 
 /* ============================================================
    启动
