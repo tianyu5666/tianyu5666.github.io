@@ -86,7 +86,10 @@ body{
   backdrop-filter:blur(6px);transition:background .25s ease,border-color .25s ease;
 }
 .music:hover{background:rgba(255,120,160,.2);border-color:rgba(255,140,180,.5)}
-.music .ico{font-size:17px;line-height:1;color:rgba(255,214,228,.78);transition:color .3s ease}
+.music .ico{font-size:17px;line-height:1;color:rgba(255,214,228,.78);transition:opacity .25s ease,color .3s ease}
+.music .x{position:absolute;font-size:14px;line-height:1;color:#ffd9e6;opacity:0;transition:opacity .25s ease}
+.music.on:hover .ico{opacity:0}
+.music.on:hover .x{opacity:1}
 .music .disc{position:absolute;inset:4px;border-radius:50%;border:1px dashed rgba(255,170,200,.4);opacity:0;transition:opacity .3s ease}
 .music.on .ico{color:#fff}
 .music.on .disc{opacity:1;animation:spin 7s linear infinite}
@@ -121,7 +124,7 @@ body{
 <a class="toletter" id="toletter" href="/">读那封信 →</a>
 
 <button class="music" id="musicBtn" type="button" aria-label="背景音乐" title="点一下，放首歌">
-  <span class="disc"></span><span class="ico">♪</span>
+  <span class="disc"></span><span class="ico">♪</span><span class="x">✕</span>
 </button>
 <div class="nowplaying" id="nowPlaying"></div>
 
@@ -194,12 +197,17 @@ var CONFIG = {
   musicVolume: 0.34,         // 音量上限（0~1）
   musicTitle: "在你的身边 — 盛哲",
   lullabyTitle: "送你的小夜曲 · 现场合成",
-  /* 把 mp3 放进站点 music/ 文件夹，这里依次找；一个都没有就用内置小夜曲 */
+  /* —— 🎵 背景音乐（《在你的身边》— 盛哲）——
+     把歌放进站点 music/ 文件夹，文件名用下面任意一个都认（mp3 / m4a / flac / wav 都行） */
   musicSources: [
     "music/zainishenbian.mp3",
+    "music/zainishenbian.m4a",
+    "music/zainishenbian.flac",
     "music/在你的身边.mp3",
+    "music/在你的身边.m4a",
     "music/bgm.mp3"
-  ]
+  ],
+  lullabyFallback: false     // 没有歌时是否用内置小夜曲顶替（false＝没有歌就整个不显示 ♪ 按钮）
 };
 
 var canvas = document.getElementById("stage");
@@ -1082,9 +1090,16 @@ function probe(src){
 function findMusic(){
   var list = CONFIG.musicSources || [], i = 0;
   (function next(){
-    if (i >= list.length){ probed = true; return; }
-    probe(list[i]).then(function(ok){ if (ok){ audioSrc = ok; probed = true; } else { i++; next(); } });
+    if (i >= list.length){ probed = true; applyMusicAvailability(); return; }
+    probe(list[i]).then(function(ok){
+      if (ok){ audioSrc = ok; probed = true; applyMusicAvailability(); }
+      else { i++; next(); }
+    });
   })();
+}
+/* 既没有歌、又不让放小夜曲 → 干脆不显示这个按钮，别让她点了个寂寞 */
+function applyMusicAvailability(){
+  musicBtn.style.display = (!audioSrc && !CONFIG.lullabyFallback) ? "none" : "";
 }
 
 /* —— 内置小夜曲（现场合成，一个音符都不下载） —— */
@@ -1151,15 +1166,26 @@ function fadeAudio(to, ms){
 
 function playMusic(){
   if (musicPlaying) return;
+  if (!audioSrc && !CONFIG.lullabyFallback) return;
   musicPlaying = true;
   musicBtn.classList.add("on");
+  musicBtn.title = "点一下，关掉音乐";
+  musicBtn.setAttribute("aria-label", "关闭背景音乐");
   if (audioSrc){
-    if (!audioEl){ audioEl = new Audio(audioSrc); audioEl.loop = true; audioEl.preload = "auto"; }
+    if (!audioEl){
+      audioEl = new Audio(audioSrc);
+      audioEl.loop = true;                      /* 无限循环 */
+      audioEl.preload = "auto";
+      /* 双保险：万一某些浏览器忽略 loop，播完自己从头再来 */
+      audioEl.addEventListener("ended", function(){
+        try { audioEl.currentTime = 0; audioEl.play(); } catch(e){}
+      });
+    }
     audioEl.volume = 0;
-    var pr = audioEl.play();
-    if (pr && pr.catch) pr.catch(function(){});
+    var pr = audioEl.play();                    /* 关掉再打开＝接着上次听，不是从头 */
+    if (pr && pr.catch) pr.catch(function(){ musicPlaying = false; musicBtn.classList.remove("on"); });
     fadeAudio(CONFIG.musicVolume, 1800);
-    nowShow("♪ " + CONFIG.musicTitle);
+    nowShow("♪ " + CONFIG.musicTitle + "　·　点右上角 ♪ 可关掉");
   } else {
     ensureAudio();
     if (!ac){ musicPlaying = false; musicBtn.classList.remove("on"); return; }
@@ -1167,13 +1193,15 @@ function playMusic(){
     musicGain.gain.cancelScheduledValues(ac.currentTime);
     musicGain.gain.setValueAtTime(0.0001, ac.currentTime);
     musicGain.gain.linearRampToValueAtTime(CONFIG.musicVolume, ac.currentTime + 2.2);
-    nowShow("♪ " + CONFIG.lullabyTitle);
+    nowShow("♪ " + CONFIG.lullabyTitle + "　·　点右上角 ♪ 可关掉");
   }
 }
 function stopMusic(){
   if (!musicPlaying) return;
   musicPlaying = false;
   musicBtn.classList.remove("on");
+  musicBtn.title = "点一下，放首歌";
+  musicBtn.setAttribute("aria-label", "播放背景音乐");
   if (audioSrc && audioEl){
     fadeAudio(0, 700);
     setTimeout(function(){ if (!musicPlaying && audioEl) audioEl.pause(); }, 760);
@@ -1221,7 +1249,12 @@ window.__music = {
   ctx: function(){ return ac ? ac.state : "none"; },
   gain: function(){ return musicGain ? +musicGain.gain.value.toFixed(3) : 0; },
   steps: function(){ return stepIdx; },
-  wanted: function(){ return musicWanted; }
+  wanted: function(){ return musicWanted; },
+  loop: function(){ return audioEl ? audioEl.loop : null; },
+  t: function(){ return audioEl ? +audioEl.currentTime.toFixed(2) : -1; },
+  dur: function(){ return audioEl && isFinite(audioEl.duration) ? +audioEl.duration.toFixed(2) : -1; },
+  paused: function(){ return audioEl ? audioEl.paused : null; },
+  seek: function(v){ if (audioEl) audioEl.currentTime = v; }
 };
 
 findMusic();
