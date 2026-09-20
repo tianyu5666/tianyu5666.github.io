@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>韩玉 · 为你绽放 🌹</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8C%B9%3C/text%3E%3C/svg%3E">
+<style>
+/* ============================================================
+   🌹 粒子情书：粒子先聚成「韩玉」，再绽放成一朵红玫瑰
+   纯 canvas + 原生 JS，无任何外部依赖，离线可用
+   ============================================================ */
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden;background:#07060c}
+body{
+  font-family:"PingFang SC","Microsoft YaHei","Hiragino Sans GB",sans-serif;
+  color:#ffe9f0;-webkit-font-smoothing:antialiased;cursor:crosshair;
+}
+#stage{position:fixed;inset:0;display:block}
+
+/* 顶部返回 */
+.back{
+  position:fixed;left:16px;top:14px;z-index:5;font-size:13px;color:rgba(255,214,228,.72);
+  text-decoration:none;padding:7px 14px;border-radius:999px;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,180,205,.22);
+  backdrop-filter:blur(6px);transition:all .25s ease;
+}
+.back:hover{color:#fff;background:rgba(255,120,160,.2);border-color:rgba(255,140,180,.5)}
+
+/* 底部文案（玫瑰绽放后淡入） */
+.caption{
+  position:fixed;left:50%;bottom:8%;transform:translate(-50%,16px);
+  text-align:center;z-index:5;pointer-events:none;
+  opacity:0;transition:opacity 1.6s ease,transform 1.6s ease;
+}
+.caption.show{opacity:1;transform:translate(-50%,0)}
+.caption .line{
+  font-family:"Kaiti SC","STKaiti","KaiTi","楷体",serif;
+  font-size:clamp(16px,3.4vw,24px);letter-spacing:.22em;padding-left:.22em;
+  color:#ffd9e6;text-shadow:0 0 18px rgba(255,80,130,.75),0 0 40px rgba(255,40,90,.45);
+}
+.caption .sign{
+  margin-top:12px;font-family:"Kaiti SC","STKaiti","KaiTi","楷体",serif;
+  font-size:clamp(12px,2.4vw,15px);letter-spacing:.3em;padding-left:.3em;
+  color:rgba(255,190,210,.72);
+}
+
+/* 操作提示 */
+.hint{
+  position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:5;
+  font-size:12px;color:rgba(255,205,222,.5);letter-spacing:.14em;
+  opacity:0;transition:opacity 1.2s ease;pointer-events:none;white-space:nowrap;
+}
+.hint.show{opacity:1}
+
+/* 玫瑰绽放后出现的"去读信"入口 */
+.toletter{
+  position:fixed;right:18px;bottom:18px;z-index:5;font-size:13px;text-decoration:none;
+  color:#ffe3ec;padding:9px 16px;border-radius:999px;
+  background:rgba(255,90,140,.18);border:1px solid rgba(255,150,185,.42);
+  backdrop-filter:blur(6px);opacity:0;transform:translateY(10px);
+  transition:opacity 1.4s ease,transform 1.4s ease,background .25s ease;
+  pointer-events:none;
+}
+.toletter.show{opacity:1;transform:none;pointer-events:auto}
+.toletter:hover{background:rgba(255,90,140,.34)}
+
+@media (prefers-reduced-motion:reduce){
+  .caption,.hint{transition:none}
+}
+</style>
+</head>
+<body>
+<canvas id="stage"></canvas>
+<a class="back" href="/">← 回到信</a>
+
+<div class="caption" id="caption">
+  <div class="line" id="capLine">愿你如玫瑰，永远盛开</div>
+  <div class="sign" id="capSign">—— 连天瑜</div>
+</div>
+<div class="hint" id="hint">轻触屏幕，花瓣会飞起来</div>
+<a class="toletter" id="toletter" href="/">读那封信 →</a>
+
+<script>
+(function(){
+"use strict";
+
+/* ============================================================
+   ✏️ 想改内容就改这里
+   ============================================================ */
+var CONFIG = {
+  name: "韩玉",                              // 粒子拼出的名字
+  caption: "愿你如玫瑰，永远盛开",              // 玫瑰绽放后的文案
+  signature: "—— 连天瑜",                     // 落款
+  nameFontFamily: '"Kaiti SC","STKaiti","KaiTi","楷体","FangSong",serif',
+  sampleStep: 5,                             // 采样密度（越小粒子越多越细腻）
+  maxParticles: 5200,                        // 粒子上限（性能保护）
+  stiffness: 0.055,                          // 弹簧系数（越大聚得越快）
+  damping: 0.86,                             // 阻尼（越接近 1 越飘）
+  holdNameMs: 6000,                          // 名字停留时间
+  holdRoseMs: 9000,                          // 玫瑰停留时间
+  jitter: 1.5,                               // 静止时的轻微抖动
+  clickBurst: 26                             // 点击时给粒子的冲量
+};
+
+var canvas = document.getElementById("stage");
+var ctx = canvas.getContext("2d", { alpha: false });
+var W = 0, H = 0, DPR = 1;
+var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ============================================================
+   工具
+   ============================================================ */
+function rand(a, b){ return a + Math.random() * (b - a); }
+function lerp(a, b, t){ return a + (b - a) * t; }
+function clamp(v, a, b){ return Math.min(b, Math.max(a, v)); }
+
+/* 光点贴图缓存（按颜色量化，避免每帧画渐变） */
+var spriteCache = {};
+function glowSprite(r, g, b){
+  var key = ((r >> 3) << 10) | ((g >> 3) << 5) | (b >> 3);
+  var s = spriteCache[key];
+  if (s) return s;
+  var size = 22;
+  s = document.createElement("canvas");
+  s.width = s.height = size;
+  var c = s.getContext("2d");
+  var grd = c.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
+  grd.addColorStop(0,   "rgba(" + r + "," + g + "," + b + ",1)");
+  grd.addColorStop(0.28,"rgba(" + r + "," + g + "," + b + ",0.55)");
+  grd.addColorStop(1,   "rgba(" + r + "," + g + "," + b + ",0)");
+  c.fillStyle = grd;
+  c.fillRect(0, 0, size, size);
+  spriteCache[key] = s;
+  return s;
+}
+
+/* ============================================================
+   采样：把文字 / 玫瑰图 变成粒子目标点
+   ============================================================ */
+function sampleCanvas(src, step){
+  var w = src.width, h = src.height;
+  var data = src.getContext("2d", { willReadFrequently: true }).getImageData(0, 0, w, h).data;
+  var pts = [];
+  for (var y = 0; y < h; y += step){
+    for (var x = 0; x < w; x += step){
+      var i = (y * w + x) * 4;
+      var a = data[i + 3];
+      if (a < 110) continue;
+      pts.push({ x: x, y: y, r: data[i], g: data[i+1], b: data[i+2] });
+    }
+  }
+  return pts;
+}
+
+/* 名字：白字画在离屏画布上采样，再按位置给粉→红渐变 */
+function buildNamePoints(){
+  var pad = 40;
+  var w = Math.max(240, Math.min(W - 40, 1100));
+  var h = Math.max(160, Math.min(H * 0.5, 420));
+  var off = document.createElement("canvas");
+  off.width = w; off.height = h;
+  var c = off.getContext("2d");
+  c.fillStyle = "#fff";
+  c.textAlign = "center";
+  c.textBaseline = "middle";
+  var size = Math.floor(h * 0.78);
+  do {
+    c.font = "bold " + size + "px " + CONFIG.nameFontFamily;
+    size -= 4;
+  } while (size > 40 && c.measureText(CONFIG.name).width > w * 0.86);
+  c.font = "bold " + (size + 4) + "px " + CONFIG.nameFontFamily;
+  c.fillText(CONFIG.name, w / 2, h / 2);
+
+  var raw = sampleCanvas(off, CONFIG.sampleStep);
+  var out = [];
+  for (var i = 0; i < raw.length; i++){
+    var p = raw[i];
+    var t = p.y / h;                                  // 上浅粉 → 下玫红
+    out.push({
+      x: p.x - w / 2,
+      y: p.y - h / 2,
+      r: Math.round(lerp(255, 232, t)),
+      g: Math.round(lerp(150, 32, t)),
+      b: Math.round(lerp(196, 96, t))
+    });
+  }
+  return out;
+}
+
+/* 玫瑰：优先用系统彩色 emoji 画一朵，画不出就手绘一朵 */
+function buildRoseCanvas(size){
+  var off = document.createElement("canvas");
+  off.width = off.height = size;
+  var c = off.getContext("2d");
+
+  /* ① 试试 emoji */
+  c.textAlign = "center";
+  c.textBaseline = "middle";
+  c.font = Math.floor(size * 0.86) + 'px "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif';
+  c.fillText("🌹", size / 2, size * 0.54);
+  var probe = c.getImageData(0, 0, size, size).data;
+  var red = 0, green = 0;
+  for (var i = 0; i < probe.length; i += 4 * 37){
+    if (probe[i+3] > 120){
+      if (probe[i] > 120 && probe[i+1] < 110 && probe[i+2] < 120) red++;
+      if (probe[i+1] > 90 && probe[i] < 130) green++;
+    }
+  }
+  if (red > 120 && green > 25) return off;             // emoji 成功
+
+  /* ② 手绘一朵玫瑰（深红花瓣 + 花心螺旋 + 花茎绿叶） */
+  c.clearRect(0, 0, size, size);
+  var cx = size * 0.5, cy = size * 0.42, R = size * 0.30;
+
+  /* 花茎 */
+  var stemGrd = c.createLinearGradient(cx - 8, cy, cx + 8, size * 0.95);
+  stemGrd.addColorStop(0, "#4e8f3d");
+  stemGrd.addColorStop(1, "#2f6b28");
+  c.strokeStyle = stemGrd;
+  c.lineWidth = size * 0.018;
+  c.lineCap = "round";
+  c.beginPath();
+  c.moveTo(cx, cy + R * 0.85);
+  c.quadraticCurveTo(cx + size * 0.035, size * 0.72, cx + size * 0.012, size * 0.96);
+  c.stroke();
+
+  /* 两片叶子 */
+  function leaf(px, py, dir, scale){
+    c.save();
+    c.translate(px, py);
+    c.rotate(dir * 0.5);
+    var lg = c.createLinearGradient(0, 0, dir * size * 0.16 * scale, 0);
+    lg.addColorStop(0, "#59a344");
+    lg.addColorStop(1, "#2f6b28");
+    c.fillStyle = lg;
+    c.beginPath();
+    c.moveTo(0, 0);
+    c.quadraticCurveTo(dir * size * 0.09 * scale, -size * 0.05 * scale, dir * size * 0.17 * scale, 0);
+    c.quadraticCurveTo(dir * size * 0.09 * scale, size * 0.05 * scale, 0, 0);
+    c.fill();
+    c.restore();
+  }
+  leaf(cx, size * 0.72, 1, 1);
+  leaf(cx + size * 0.01, size * 0.83, -1, 0.82);
+
+  /* 花瓣：三层 */
+  var layers = [
+    { n: 7, rr: 1.00, col: ["#8e0f24", "#c81d3f"], off: 0.00 },
+    { n: 6, rr: 0.78, col: ["#b3122b", "#e23a5c"], off: 0.34 },
+    { n: 5, rr: 0.56, col: ["#d81b45", "#ff5c7d"], off: 0.66 },
+    { n: 4, rr: 0.34, col: ["#ff4d6d", "#ff92ac"], off: 0.95 }
+  ];
+  layers.forEach(function(L, li){
+    for (var k = 0; k < L.n; k++){
+      var a = (k / L.n) * Math.PI * 2 + L.off + li * 0.4;
+      var px = cx + Math.cos(a) * R * L.rr * 0.42;
+      var py = cy + Math.sin(a) * R * L.rr * 0.42;
+      var grd = c.createRadialGradient(px, py, 0, px, py, R * L.rr * 0.62);
+      grd.addColorStop(0, L.col[1]);
+      grd.addColorStop(1, L.col[0]);
+      c.fillStyle = grd;
+      c.save();
+      c.translate(px, py);
+      c.rotate(a + Math.PI / 2);
+      c.beginPath();
+      c.ellipse(0, 0, R * L.rr * 0.52, R * L.rr * 0.38, 0, 0, Math.PI * 2);
+      c.fill();
+      c.restore();
+    }
+  });
+
+  /* 花心螺旋 */
+  c.strokeStyle = "rgba(255,150,175,.75)";
+  c.lineWidth = size * 0.006;
+  c.beginPath();
+  for (var t = 0; t < Math.PI * 5; t += 0.2){
+    var rr = R * 0.06 + t * R * 0.035;
+    var xx = cx + Math.cos(t) * rr;
+    var yy = cy + Math.sin(t) * rr;
+    if (t === 0) c.moveTo(xx, yy); else c.lineTo(xx, yy);
+  }
+  c.stroke();
+  return off;
+}
+
+function buildRosePoints(){
+  var size = Math.floor(Math.min(W * 0.62, H * 0.7));
+  size = Math.max(220, size);
+  var off = buildRoseCanvas(size);
+  var raw = sampleCanvas(off, CONFIG.sampleStep);
+  var out = [];
+  for (var i = 0; i < raw.length; i++){
+    var p = raw[i];
+    out.push({ x: p.x - size / 2, y: p.y - size * 0.5, r: p.r, g: p.g, b: p.b });
+  }
+  return out;
+}
+
+/* ============================================================
+   粒子
+   ============================================================ */
+var particles = [];
+var namePts = [], rosePts = [];
+var phase = "name";       // name | rose
+var phaseUntil = 0;
+var last = 0;
+var time = 0;
+var startedBurst = false;
+
+function makeParticles(count){
+  particles.length = 0;
+  for (var i = 0; i < count; i++){
+    var a = Math.random() * Math.PI * 2;
+    var d = rand(Math.max(W, H) * 0.45, Math.max(W, H) * 0.9);
+    particles.push({
+      x: W / 2 + Math.cos(a) * d,
+      y: H / 2 + Math.sin(a) * d,
+      vx: 0, vy: 0,
+      tx: W / 2, ty: H / 2,
+      r: 255, g: 130, b: 180,
+      cr: 255, cg: 130, cb: 180,        // 当前颜色（向目标色渐近）
+      size: rand(1.0, 2.0),
+      ph: Math.random() * Math.PI * 2,
+      alpha: 0
+    });
+  }
+}
+
+/* 把目标点分给粒子：点不够的粒子去"外围尘埃" */
+function assignTargets(pts){
+  var n = particles.length;
+  for (var i = 0; i < n; i++){
+    var p = particles[i];
+    if (i < pts.length){
+      var t = pts[i];
+      p.tx = W / 2 + t.x;
+      p.ty = H / 2 + t.y;
+      p.r = t.r; p.g = t.g; p.b = t.b;
+      p.alpha = 1;
+    } else {
+      /* 多余的粒子飘到外围做星尘 */
+      var a = (i / n) * Math.PI * 2 + time * 0.0004;
+      var d = Math.min(W, H) * rand(0.42, 0.58);
+      p.tx = W / 2 + Math.cos(a) * d;
+      p.ty = H / 2 + Math.sin(a) * d * 0.72;
+      p.r = 255; p.g = 190; p.b = 215;
+      p.alpha = 0.42;
+    }
+  }
+}
+
+function setPhase(next){
+  phase = next;
+  if (next === "name"){
+    assignTargets(namePts);
+    phaseUntil = time + CONFIG.holdNameMs;
+    caption.classList.remove("show");
+    var tl2 = document.getElementById("toletter"); if (tl2) tl2.classList.remove("show");
+  } else {
+    assignTargets(rosePts);
+    phaseUntil = time + CONFIG.holdRoseMs;
+    caption.classList.add("show");
+    var tl = document.getElementById("toletter"); if (tl) tl.classList.add("show");
+  }
+}
+
+/* ============================================================
+   背景：星空 + 粉色光晕
+   ============================================================ */
+var stars = [];
+function buildStars(){
+  stars.length = 0;
+  var n = Math.round(clamp((W * H) / 16000, 60, 200));
+  for (var i = 0; i < n; i++){
+    stars.push({ x: Math.random() * W, y: Math.random() * H, r: rand(0.4, 1.5), p: Math.random() * Math.PI * 2, s: rand(0.6, 1.6) });
+  }
+}
+
+function drawBackground(){
+  var g = ctx.createRadialGradient(W * 0.5, H * 0.46, 0, W * 0.5, H * 0.46, Math.max(W, H) * 0.78);
+  g.addColorStop(0, "#1a0d18");
+  g.addColorStop(0.45, "#100813");
+  g.addColorStop(1, "#06050a");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+
+  /* 星星 */
+  ctx.globalCompositeOperation = "lighter";
+  for (var i = 0; i < stars.length; i++){
+    var s = stars[i];
+    var tw = 0.45 + 0.55 * Math.sin(time * 0.0012 * s.s + s.p);
+    ctx.globalAlpha = 0.42 * tw;
+    ctx.fillStyle = "#ffd7e6";
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  /* 中央粉色光晕 */
+  var halo = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, Math.min(W, H) * 0.55);
+  halo.addColorStop(0, "rgba(255,70,120,.14)");
+  halo.addColorStop(0.5, "rgba(255,60,110,.05)");
+  halo.addColorStop(1, "rgba(255,60,110,0)");
+  ctx.fillStyle = halo;
+  ctx.fillRect(0, 0, W, H);
+  ctx.globalCompositeOperation = "source-over";
+}
+
+/* ============================================================
+   飘落的花瓣（玫瑰绽放后出现）
+   ============================================================ */
+var petals = [];
+function spawnPetal(){
+  petals.push({
+    x: W / 2 + rand(-Math.min(W, H) * 0.22, Math.min(W, H) * 0.22),
+    y: H / 2 - Math.min(W, H) * 0.22 + rand(-10, 30),
+    vx: rand(-0.35, 0.35), vy: rand(0.35, 0.9),
+    rot: Math.random() * Math.PI, vr: rand(-0.02, 0.02),
+    s: rand(3.2, 6.4), a: rand(0.55, 0.95)
+  });
+}
+function drawPetals(dt){
+  ctx.globalCompositeOperation = "source-over";
+  for (var i = petals.length - 1; i >= 0; i--){
+    var p = petals[i];
+    p.x += p.vx + Math.sin((time + i * 90) * 0.0016) * 0.5;
+    p.y += p.vy;
+    p.rot += p.vr;
+    if (p.y > H + 30){ petals.splice(i, 1); continue; }
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.rot);
+    ctx.globalAlpha = p.a;
+    ctx.fillStyle = "#e0245e";
+    ctx.beginPath();
+    ctx.ellipse(0, 0, p.s, p.s * 0.62, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+  ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = "source-over";
+}
+
+/* ============================================================
+   主循环
+   ============================================================ */
+var caption = document.getElementById("caption");
+var hint = document.getElementById("hint");
+
+function frame(now){
+  if (!last) last = now;
+  var dt = Math.min(60, now - last);
+  last = now;
+  time = now;
+
+  drawBackground();
+
+  var breathe = 1 + 0.018 * Math.sin(time * 0.0016);
+
+  /* ① 物理与配色更新 */
+  for (var i = 0; i < particles.length; i++){
+    var p = particles[i];
+    if (reduceMotion){
+      p.x = p.tx; p.y = p.ty;
+    } else {
+      /* 弹簧 + 阻尼 + 轻微抖动 */
+      var jx = Math.sin(time * 0.0013 + p.ph) * CONFIG.jitter;
+      var jy = Math.cos(time * 0.0011 + p.ph * 1.7) * CONFIG.jitter;
+      var txx = W / 2 + (p.tx - W / 2) * breathe + jx;
+      var tyy = H / 2 + (p.ty - H / 2) * breathe + jy;
+      p.vx += (txx - p.x) * CONFIG.stiffness;
+      p.vy += (tyy - p.y) * CONFIG.stiffness;
+      p.vx *= CONFIG.damping;
+      p.vy *= CONFIG.damping;
+      p.x += p.vx * (dt / 16.7);
+      p.y += p.vy * (dt / 16.7);
+    }
+    /* 颜色渐近目标色 */
+    p.cr = lerp(p.cr, p.r, 0.06);
+    p.cg = lerp(p.cg, p.g, 0.06);
+    p.cb = lerp(p.cb, p.b, 0.06);
+  }
+
+  /* ② 柔光晕（加法混合，淡淡的，营造发光感，但不会把颜色冲白） */
+  ctx.globalCompositeOperation = "lighter";
+  for (i = 0; i < particles.length; i++){
+    var q = particles[i];
+    var s1 = 22 * q.size * 1.45;
+    ctx.globalAlpha = 0.10 * clamp(q.alpha, 0, 1);
+    ctx.drawImage(glowSprite(Math.round(q.cr), Math.round(q.cg), Math.round(q.cb)),
+                  q.x - s1 / 2, q.y - s1 / 2, s1, s1);
+  }
+
+  /* ③ 实体粒子（正常混合，保住红玫瑰与绿叶的本色） */
+  ctx.globalCompositeOperation = "source-over";
+  for (i = 0; i < particles.length; i++){
+    var v = particles[i];
+    var s2 = 13 * v.size;
+    ctx.globalAlpha = 0.95 * clamp(v.alpha, 0, 1);
+    ctx.drawImage(glowSprite(Math.round(v.cr), Math.round(v.cg), Math.round(v.cb)),
+                  v.x - s2 / 2, v.y - s2 / 2, s2, s2);
+  }
+
+  ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = "source-over";
+
+  /* 玫瑰阶段：飘花瓣 */
+  if (phase === "rose"){
+    if (petals.length < 26 && Math.random() < 0.06) spawnPetal();
+    drawPetals(dt);
+    if (!startedBurst){ startedBurst = true; }
+  }
+
+  /* 阶段切换 */
+  if (time > phaseUntil) setPhase(phase === "name" ? "rose" : "name");
+
+  requestAnimationFrame(frame);
+}
+
+/* ============================================================
+   尺寸 / 交互
+   ============================================================ */
+function buildShapePoints(){
+  namePts = buildNamePoints();
+  rosePts = buildRosePoints();
+  var count = Math.min(CONFIG.maxParticles, Math.max(namePts.length, rosePts.length));
+  count = Math.max(600, count);
+  makeParticles(count);
+  assignTargets(phase === "name" ? namePts : rosePts);
+}
+
+function resize(){
+  DPR = Math.min(2, window.devicePixelRatio || 1);
+  W = window.innerWidth;
+  H = window.innerHeight;
+  canvas.width = Math.floor(W * DPR);
+  canvas.height = Math.floor(H * DPR);
+  canvas.style.width = W + "px";
+  canvas.style.height = H + "px";
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  buildStars();
+  buildShapePoints();
+}
+
+window.addEventListener("resize", function(){
+  clearTimeout(resize._t);
+  resize._t = setTimeout(resize, 260);
+});
+
+/* 点击：花瓣飞散再接回来 */
+function burst(x, y){
+  for (var i = 0; i < particles.length; i++){
+    var p = particles[i];
+    var dx = p.x - x, dy = p.y - y;
+    var d = Math.sqrt(dx * dx + dy * dy) || 1;
+    var f = CONFIG.clickBurst * (1 - clamp(d / (Math.min(W, H) * 0.6), 0, 1));
+    p.vx += (dx / d) * f * rand(0.6, 1.4);
+    p.vy += (dy / d) * f * rand(0.6, 1.4);
+  }
+  for (var k = 0; k < 6; k++) spawnPetal();
+}
+canvas.addEventListener("pointerdown", function(e){ burst(e.clientX, e.clientY); });
+window.addEventListener("keydown", function(e){ if (e.key === "b" || e.key === "B") burst(W/2, H/2); });
+
+/* ============================================================
+   启动
+   ============================================================ */
+document.getElementById("capLine").textContent = CONFIG.caption;
+document.getElementById("capSign").textContent = CONFIG.signature;
+resize();
+setPhase("name");
+requestAnimationFrame(frame);
+setTimeout(function(){ hint.classList.add("show"); }, 2600);
+setTimeout(function(){ hint.classList.remove("show"); }, 9000);
+
+})();
+</script>
+</body>
+</html>
