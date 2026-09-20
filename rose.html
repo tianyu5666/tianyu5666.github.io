@@ -200,10 +200,9 @@ var CONFIG = {
   /* —— 🎵 背景音乐（《在你的身边》— 盛哲）——
      把歌放进站点 music/ 文件夹，文件名用下面任意一个都认（mp3 / m4a / flac / wav 都行） */
   musicSources: [
-    "https://cdn.jsdelivr.net/gh/tianyu5666/tianyu5666.github.io@main/music/zainishenbian.mp3",
+    "https://cdn.jsdelivr.net/gh/tianyu5666/tianyu5666.github.io@a8f4635d5416557049f32bf01ccf26e4e31e42e3/music/zainishenbian.mp3",
     "music/zainishenbian.mp3",
-    "music/在你的身边.mp3",
-    "music/zainishenbian.m4a"
+    "music/在你的身边.mp3"
   ],
   lullabyFallback: false     // 没有歌时是否用内置小夜曲顶替（false＝没有歌就整个不显示 ♪ 按钮）
 };
@@ -1099,14 +1098,17 @@ function killProbes(except){
 function findMusic(){
   var list = CONFIG.musicSources || [];
   for (var i = 0; i < list.length; i++){
-    (function(src){
-      probeOnce(src).then(function(r){
-        if (r.src){
-          if (!audioSrc) audioSrc = r.src;      /* 第一个能用的音源胜出 */
-          killProbes(r.el);                     /* 其余的探测立刻掐掉，别占带宽 */
-        }
-      });
-    })(list[i]);
+    (function(src, delay){
+      setTimeout(function(){
+        if (audioSrc) return;                   /* 已经有能用的了，不用再试 */
+        probeOnce(src).then(function(r){
+          if (r.src){
+            if (!audioSrc) audioSrc = r.src;    /* 首个可用的胜出 */
+            killProbes(r.el);                   /* 其余的探测掐掉，别占带宽 */
+          }
+        });
+      }, delay);
+    })(list[i], i === 0 ? 0 : 2500 + (i - 1) * 1500);
   }
 }
 
